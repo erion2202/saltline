@@ -1,0 +1,15 @@
+{
+  "name": "saltline",
+  "version": "1.0.0",
+  "description": "Saltline: a browser first-person shooter with live multiplayer",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}
