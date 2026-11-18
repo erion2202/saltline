@@ -1,4 +1,4 @@
-// Saltline game server: serves the game page and relays players' state over WebSockets.
+// Onenight game server: serves the game page and relays players' state over WebSockets.
 // Players are grouped into arenas of up to 6. Each player sends their own state; 20 times a
 // second the server sends every player in an arena a snapshot of everyone's latest state.
 const http = require('http');
@@ -10,7 +10,22 @@ const PORT = process.env.PORT || 3000;
 const ARENA_SIZE = 6;
 const MAX_STATE_BYTES = 4096;
 
-const page = fs.readFileSync(path.join(__dirname, 'index.html'));
+// Serve the newest game page in this folder, whatever the browser named the download
+// ("index.html", "index (1).html", ...): the highest build number inside wins, then the highest (n).
+function newestPage() {
+  let best = null, bestScore = -1;
+  for (const f of fs.readdirSync(__dirname)) {
+    if (!/^index.*\.html$/i.test(f)) continue;
+    const text = fs.readFileSync(path.join(__dirname, f), 'utf8');
+    const build = +((text.match(/<meta name="onenight-build" content="(\d+)"/) || [])[1] || 0);
+    const n = +((f.match(/\((\d+)\)/) || [])[1] || 0);
+    const score = build * 1000 + n;
+    if (score > bestScore) { bestScore = score; best = f; }
+  }
+  console.log('Serving ' + best);
+  return fs.readFileSync(path.join(__dirname, best || 'index.html'));
+}
+const page = newestPage();
 
 const server = http.createServer((req, res) => {
   const url = req.url.split('?')[0];
@@ -82,4 +97,4 @@ setInterval(() => {
   }
 }, 30000);
 
-server.listen(PORT, () => console.log('Saltline is running on port ' + PORT));
+server.listen(PORT, () => console.log('Onenight is running on port ' + PORT));
