@@ -42,6 +42,60 @@ body{background:var(--ink);color:var(--salt);font-family:var(--mono);touch-actio
 #hAmmo.empty{color:var(--ember)}
 #ammoLbl.reloading{color:var(--apricot);opacity:1}
 #feed{gap:4px}
+#sMenu.lobby2{display:block;padding:0;background:radial-gradient(ellipse at 50% 55%,rgba(10,10,24,0) 45%,rgba(8,8,20,.55) 100%);overflow:hidden}
+.ltop{position:absolute;top:0;left:0;right:0;height:64px;display:flex;align-items:center;gap:22px;padding:env(safe-area-inset-top,0px) 24px 0;background:linear-gradient(rgba(8,8,22,.92),rgba(8,8,22,.55));border-bottom:1px solid rgba(241,232,218,.12)}
+.logo{font-family:var(--display);font-weight:900;font-size:34px;letter-spacing:.02em;text-transform:uppercase;line-height:1}
+.logo span{color:var(--apricot)}
+.lnav{display:flex;gap:4px;flex:1;min-width:0;overflow-x:auto}
+.lnav button{font:inherit;font-size:12px;letter-spacing:.14em;text-transform:uppercase;padding:9px 16px;background:rgba(241,232,218,.06);color:var(--salt);border:1px solid rgba(241,232,218,.18);cursor:pointer;white-space:nowrap}
+.lnav button.on{background:var(--apricot);color:var(--ink);border-color:var(--apricot);font-weight:600}
+.lnav button:hover:not(.on){border-color:rgba(241,232,218,.5)}
+.lchip{font-size:12px;letter-spacing:.08em;padding:7px 12px;border:1px solid rgba(241,232,218,.25);background:rgba(8,8,22,.6);white-space:nowrap;color:#9fe39f}
+.lprofile{position:absolute;left:24px;top:84px;width:270px;max-height:max(220px,calc(44vh - 20px));overflow-y:auto;display:flex;flex-direction:column;gap:12px;padding:16px;background:rgba(14,12,28,.78);border:1px solid rgba(241,232,218,.14);backdrop-filter:blur(4px)}
+.lprofile.flash{animation:lflash 1.2s}
+@keyframes lflash{0%,100%{box-shadow:none}30%{box-shadow:0 0 0 2px var(--apricot)}}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.stats div{background:rgba(241,232,218,.05);padding:7px 9px;display:flex;flex-direction:column;gap:2px}
+.stats b{font-family:var(--display);font-size:26px;line-height:1;color:var(--apricot)}
+.stats span{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--salt-dim)}
+.lprofile .net{max-width:none}
+#slotLabels{position:absolute;inset:0;pointer-events:none;z-index:1}
+.ltop,.lprofile,.lmode,.lbottom{z-index:2}
+@media (max-width:1440px){.lmode{width:290px}.lprofile{width:250px}}
+.slotlab{position:absolute;transform:translate(-50%,-100%);display:flex;flex-direction:column;align-items:center;gap:2px;white-space:nowrap;text-shadow:0 1px 3px rgba(0,0,0,.9)}
+.slotlab b{font-size:14px;font-weight:600;letter-spacing:.04em;padding:3px 10px;background:rgba(8,8,22,.62);border-bottom:2px solid rgba(241,232,218,.25)}
+.slotlab b i{font-style:normal;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--apricot);margin-left:4px}
+.slotlab span{font-size:12px;letter-spacing:.1em;text-transform:uppercase;font-weight:600}
+.slotlab span.ok{color:#8fe08a}.slotlab span.wait{color:#ff8a6a}.slotlab span.busy{color:#7cc8ff}
+.slotplus{position:absolute;transform:translate(-50%,-50%);width:54px;height:54px;font:600 30px var(--mono);line-height:1;color:var(--salt);background:rgba(8,8,22,.35);border:2px dashed rgba(241,232,218,.75);cursor:pointer;pointer-events:auto}
+.slotplus:hover{border-color:var(--apricot);color:var(--apricot)}
+.slotplus.off{opacity:.35;cursor:default}
+.lbottom{position:absolute;left:24px;bottom:calc(20px + env(safe-area-inset-bottom,0px));width:380px;display:flex;flex-direction:column;gap:6px}
+#partyLog{display:flex;flex-direction:column;gap:3px;font-size:13px}
+#partyLog div{text-shadow:0 1px 3px rgba(0,0,0,.95);transition:opacity .6s}
+#partyLog div i{font-style:normal;opacity:.6;margin-right:6px}
+#partyLog div b{color:#9fe39f;font-weight:600}
+.lmode{position:absolute;right:24px;bottom:calc(20px + env(safe-area-inset-bottom,0px));width:330px;display:flex;flex-direction:column;gap:9px;padding:16px;background:rgba(14,12,28,.82);border:1px solid rgba(241,232,218,.14);backdrop-filter:blur(4px)}
+.lmodehead{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--salt-dim);text-align:center}
+.lmodename{font-family:var(--display);font-weight:900;font-size:46px;line-height:.9;text-transform:uppercase;text-align:center}
+.lmodesub{font-size:12px;color:var(--salt-dim);text-align:center;min-height:1.2em}
+button.mini.wide{width:100%;padding:8px}
+.lrow{display:flex;align-items:center;gap:10px;font-size:12px}
+.lrow label,.lrow span{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--salt-dim);min-width:62px}
+.lrow select{flex:1;font:600 13px var(--mono);background:rgba(241,232,218,.08);color:var(--salt);border:1px solid rgba(241,232,218,.35);padding:5px 7px}
+.lrow select option{background:var(--ink)}
+.lrow em{flex:1;font-style:normal;font-size:12px}
+.btn.play{width:100%;font-size:40px;padding:12px 10px 14px;margin-top:2px}
+.btn.play.ready{background:#8fe08a}
+.lmodefoot{font-size:11px;color:var(--salt-dim);text-align:center;min-height:1em}
+@media (max-width:900px){.lprofile{width:230px}.lbottom{width:300px}.lmode{width:290px}}
+@media (max-width:760px),(max-height:560px){
+  .ltop{height:54px;gap:10px;padding:env(safe-area-inset-top,0px) 12px 0}.logo{font-size:26px}.lnav button{padding:7px 9px;font-size:11px}.lchip{display:none}
+  .lprofile{left:12px;right:12px;top:62px;width:auto;max-height:30vh;min-height:0;padding:10px;gap:8px}
+  .stats{grid-template-columns:repeat(4,1fr)}.stats b{font-size:20px}
+  .lbottom{left:12px;right:12px;width:auto;bottom:calc(240px + env(safe-area-inset-bottom,0px))}#partyLog{display:none}
+  .lmode{left:12px;right:12px;width:auto;bottom:calc(10px + env(safe-area-inset-bottom,0px));padding:10px;gap:6px}.lmodename{font-size:32px}.btn.play{font-size:30px;padding:8px}
+}
 #fpsBox{position:absolute;left:calc(18px + env(safe-area-inset-left,0px));top:calc(118px + env(safe-area-inset-top,0px));font-size:11px;letter-spacing:.1em;opacity:.8;text-shadow:0 1px 2px rgba(22,18,29,.9)}
 #sSettings{overflow-y:auto}
 #sSettings .panel{max-width:640px}
@@ -264,52 +318,50 @@ body.touch #feed{display:none}
 </div>
 <button id="tPause" hidden aria-label="Pause">II</button>
 
-<section class="screen" id="sMenu">
-  <div class="panel">
-    <div class="eyebrow">Greenmoor valley · battle royale · solo, duos, trios, squads</div>
-    <h1>One<span>night</span></h1>
-    <p class="lede">Drop into the valley, build to survive and keep ahead of the gas. Team up with friends or go alone: the last team standing wins.</p>
-    <div class="lobby">
-      <div class="lcol">
-        <div class="lhead">Your party · <span id="modeName">Solo</span> <span id="partyNote"></span></div>
-        <div id="partySlots"></div>
-        <div class="modes" id="modes"><button data-m="1">Solo</button><button data-m="2">Duos</button><button data-m="3">Trios</button><button data-m="4">Squads</button></div>
-        <button class="mini" id="leaveBtn" hidden>Leave party</button>
-      </div>
-      <div class="lcol">
-        <div class="lhead">Online now</div>
-        <div id="onlineList"></div>
-      </div>
-    </div>
-    <div id="invites"></div>
+<section class="screen lobby2" id="sMenu">
+  <header class="ltop">
+    <div class="logo">One<span>night</span></div>
+    <nav class="lnav"><button class="on" type="button">Lobby</button><button id="setBtn" type="button">Settings</button><button id="navHelp" type="button">How to play</button></nav>
+    <div class="lchip" id="onlineChip">● 1 online</div>
+  </header>
+  <aside class="lprofile" id="lprofile">
+    <div class="lhead">Profile</div>
+    <div class="field"><label for="callsign">Callsign</label><input type="text" id="callsign" maxlength="16" autocomplete="off" spellcheck="false"></div>
+    <div class="stats"><div><b id="stWins">0</b><span>Wins</span></div><div><b id="stKills">0</b><span>Eliminations</span></div><div><b id="stMatches">0</b><span>Matches</span></div><div><b id="stStreak">0</b><span>Best streak</span></div></div>
+    <div class="lhead">Online now</div>
+    <div id="onlineList"></div>
     <div class="net" id="netMenu">Checking who else is here…</div>
-    <div class="settings">
-      <div class="field"><label for="callsign">Callsign</label><input type="text" id="callsign" maxlength="16" autocomplete="off" spellcheck="false"></div>
-      <div class="field"><label for="diff">AI skill</label>
-        <select id="diff"><option value="recruit">Recruit</option><option value="regular">Regular</option><option value="veteran">Veteran</option></select></div>
-    </div>
-    <div class="row">
-      <button class="btn" id="playBtn">Play</button>
-      <button class="btn alt" id="setBtn">Settings</button>
-      <span class="meta" id="menuBest"></span>
-    </div>
-    <div class="keys" id="keysDesk">
-      <b>W A S D</b><span>Move · Shift sprints · Space jumps</span>
-      <b>Mouse · TrackPoint</b><span>Aim. A two-finger touchpad swipe also aims, and arrow keys turn</span>
-      <b>Left click · F · J</b><span>Fire. F and J work even when the touchpad stops responding while you move</span>
-      <b>Right click · Q</b><span>Aim down the red dot (Q toggles it)</span>
-      <b>C</b><span>Crouch · press while sprinting to slide</span>
-      <b>1 · 2 · 3</b><span>Rifle · knife (50 damage) · pump shotgun</span>
-      <b>B · Z X V T</b><span>Build mode · wall, floor, ramp, roof straight away. Click places, R turns ramps, 1-4 pick a piece</span>
-      <b>G</b><span>Edit the piece you aim at: click or drag tiles, G again to confirm, right click resets</span>
-      <b>R · Tab · Esc</b><span>Reload · scoreboard · pause</span>
-    </div>
+    <div class="err" id="loadErr" hidden>The 3D engine failed to load. Check your connection and reload the page.</div>
+  </aside>
+  <div id="slotLabels"></div>
+  <div class="lbottom">
+    <div id="invites"></div>
+    <div id="partyLog"></div>
+  </div>
+  <aside class="lmode">
+    <div class="lmodehead">Game mode</div>
+    <div class="lmodename" id="modeName">Solo</div>
+    <div class="lmodesub" id="modeSub"></div>
+    <button class="mini wide" id="changeMode" type="button">Change mode</button>
+    <div class="lrow"><label for="diff">AI skill</label><select id="diff"><option value="recruit">Recruit</option><option value="regular">Regular</option><option value="veteran">Veteran</option></select></div>
+    <div class="lrow"><span>Party</span><em id="partyNote">Just you</em><button class="mini" id="leaveBtn" type="button" hidden>Leave</button></div>
+    <button class="btn play" id="playBtn" type="button">Play</button>
+    <div class="lmodefoot" id="menuBest"></div>
+  </aside>
+</section>
+
+<section class="screen" id="sHelp" hidden>
+  <div class="panel">
+    <div class="eyebrow">Onenight</div>
+    <h2>How to play</h2>
+    <p class="lede">Drop in, find a spot, build when you're shot at and stay inside the circle: the gas closes in all match. The last team standing wins. Change any key under Settings, Keybinds.</p>
+    <div class="keys" id="keysDesk"></div>
     <div class="keys" id="keysTouch" hidden>
       <b>Left thumb</b><span>Drag on the left side to move</span>
       <b>Right thumb</b><span>Drag to aim</span>
-      <b>Fire · Aim</b><span>Hold Fire to shoot and drag it to aim. Aim toggles the red dot</span>
+      <b>Fire · Aim</b><span>Hold Fire to shoot and drag it to aim. Aim toggles the sight</span>
     </div>
-    <div class="err" id="loadErr" hidden>The 3D engine failed to load. Check your connection and reload the page.</div>
+    <div class="row"><button class="btn" id="helpDone" type="button">Back</button></div>
   </div>
 </section>
 
@@ -366,7 +418,7 @@ $('diff').value = ['recruit', 'regular', 'veteran'].includes(settings.diff) ? se
 function syncSettingsUI() {}
 $('callsign').addEventListener('change', () => { settings.name = cleanName($('callsign').value) || settings.name; $('callsign').value = settings.name; store.set('name', settings.name); me.name = settings.name; });
 $('diff').addEventListener('change', () => { settings.diff = $('diff').value; store.set('diff', settings.diff); });
-$('menuBest').textContent = bestStreak ? `Best streak ${bestStreak}` : '';
+$('menuBest').textContent = '';
 
 const SKILL = {
   recruit: { acc: 0.13, react: 1.0, turn: 2.6, burst: [2, 3], pause: 1.3, head: 0.03 },
@@ -2860,7 +2912,7 @@ function damageMe(dmg, attackerId) {
 function onDeath(victim, killerId, crit) {
   addFeed(killerId, victim.id, crit);
   if (killerId === me.id && victim !== me) {
-    me.k++; me.streak++;
+    me.k++; me.streak++; store.set('kills', (store.get('kills', 0) | 0) + 1);
     if (me.streak > bestStreak) { bestStreak = me.streak; store.set('streak', bestStreak); }
     sfx.kill(); hitmarkT = 0.25; $('hitmark').className = 'on crit kill';
     const km = $('killMsg'); km.textContent = 'Eliminated '; const b = document.createElement('b'); b.textContent = victim.name; km.append(b);
@@ -2917,6 +2969,7 @@ function dropPoint() {
 function aliveCount() { let n = inGame && me.alive ? 1 : 0; for (const e of ents.values()) if (e.alive) n++; return n; }
 function aliveList() { const a = []; if (inGame && me.alive) a.push(me); for (const e of ents.values()) if (e.alive) a.push(e); return a; }
 function beginMatch(id) {
+  store.set('matches', (store.get('matches', 0) | 0) + 1);
   BR.id = id; BR.phase = 'drop'; BR.t = 0; BR.winner = null; BR.place = 0; dropTaken.length = 0;
   $('death').classList.remove('spec'); document.body.classList.remove('specmode');
   $('brEnd').hidden = true; $('death').hidden = true; spectating = null;
@@ -3438,46 +3491,54 @@ let myLeader = null;               // the leader's id while I'm in someone else'
 const invited = new Set();         // ids I invited (as leader)
 let inviteSerial = 0;
 const declined = new Set();
-let myTeam = null, lobbyT = 0;
+let myTeam = null, lobbyT = 0, myReady = false, lobbyPrev = null;
+const seenInvites = new Set(), MODE_DESC = { 1: 'Every player for themselves', 2: 'Teams of two', 3: 'Teams of three', 4: 'Teams of four' };
 BR.mode = 1; BR.winTeam = null;
 function leaderId() { return myLeader || me.id; }
 function presOf(id) { const r = remotes.get(id); return r && r.last ? r.last : null; }
 function partyMode() { if (myLeader) { const p = presOf(myLeader); return p ? clamp(p.md | 0, 1, 4) || 1 : 1; } return myMode; }
 function partyMembers() {
   const L = leaderId(), list = [];
-  if (L === me.id) list.push({ id: me.id, name: me.name, you: true, lead: true });
-  else { const p = presOf(L); list.push({ id: L, name: p ? cleanName(p.n) || 'Player' : 'Player', lead: true, inGame: !!(p && p.pl) }); list.push({ id: me.id, name: me.name, you: true }); }
-  for (const [id, r] of remotes) if (id !== L && r.last && r.last.g === NET_TAG && r.last.pid === L) list.push({ id, name: cleanName(r.last.n) || 'Player', inGame: !!r.last.pl });
+  if (L === me.id) list.push({ id: me.id, name: me.name, you: true, lead: true, status: 'Leader' });
+  else { const p = presOf(L); list.push({ id: L, name: p ? cleanName(p.n) || 'Player' : 'Player', lead: true, inGame: !!(p && p.pl), status: p && p.pl ? 'In a match' : 'Leader' }); list.push({ id: me.id, name: me.name, you: true, status: myReady ? 'Ready' : 'Not ready' }); }
+  for (const [id, r] of remotes) if (id !== L && r.last && r.last.g === NET_TAG && r.last.pid === L) list.push({ id, name: cleanName(r.last.n) || 'Player', inGame: !!r.last.pl, status: r.last.pl ? 'In a match' : r.last.rdy ? 'Ready' : 'Not ready' });
   return list.slice(0, partyMode());
 }
 function teamOf(e) { return e === me ? (myTeam || me.id) : (e.team || e.id); }
 function sameTeam(a, b) { return !!a && !!b && a !== b && teamOf(a) === teamOf(b); }
 function lobbyPresence() {
   return {
-    pid: leaderId(), md: myLeader ? null : myMode, inv: myLeader ? null : [...invited], ivs: inviteSerial,
+    pid: leaderId(), rdy: myLeader && myReady ? 1 : 0, md: myLeader ? null : myMode, inv: myLeader ? null : [...invited], ivs: inviteSerial,
     tm: inGame ? myTeam : null, bl: inGame ? myBuildString() : null, bv: inGame ? buildVer : null, bb: inGame ? BR.id : null,
     bm: inGame && iAmHost ? BR.mode : null, gt: inGame && iAmHost ? Math.round(BR.t * 10) / 10 : null, bwt: inGame && iAmHost ? BR.winTeam : null,
   };
 }
 function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; }
+function lobbyLog(html) {
+  const box = $('partyLog'), d = new Date(), row = el('div');
+  row.innerHTML = `<i>[${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}]</i>` + html;
+  box.append(row); while (box.children.length > 5) box.firstChild.remove();
+  setTimeout(() => { row.style.opacity = '0.45'; }, 15000);
+}
 function renderLobby() {
   if (state !== 'menu' || !LOBBY_OK) return;
   // my leader left, or joined someone else's party: I'm on my own again
-  if (myLeader) { const p = presOf(myLeader); if (!p || p.pid !== myLeader) myLeader = null; }
+  if (myLeader) { const p = presOf(myLeader); if (!p || p.pid !== myLeader) { lobbyLog('Your party leader left. <b>You lead your own party now.</b>'); myLeader = null; myReady = false; } }
   const mode = partyMode(), members = partyMembers(), lead = !myLeader;
-  setText('modeName', MODES[mode]);
-  const slots = $('partySlots'); slots.textContent = '';
-  for (let i = 0; i < mode; i++) {
-    const m = members[i], row = el('div', 'pslot' + (m ? '' : ' empty'));
-    if (m) { row.append(el('span', '', m.name + (m.you ? ' (you)' : ''))); row.append(el('em', '', m.lead ? 'Leader' : m.inGame ? 'In a match' : 'Ready')); }
-    else row.append(el('span', '', lead ? 'Empty slot · invite someone' : 'Empty slot'));
-    slots.append(row);
-  }
-  for (const b of $('modes').children) { b.classList.toggle('on', (b.dataset.m | 0) === mode); b.disabled = !lead; }
+  setText('modeName', MODES[mode]); setText('modeSub', MODE_DESC[mode]);
+  const cm = $('changeMode'); cm.disabled = !lead; cm.textContent = lead ? 'Change mode' : 'The party leader picks the mode';
   $('leaveBtn').hidden = lead;
+  // who joined or left
+  // (you and your own name changes never count as someone joining or leaving)
+  const names = new Map(members.filter(m => !m.you).map(m => [m.id, m.name])), ids = members.map(m => m.id);
+  if (lobbyPrev) {
+    for (const [id, nm] of names) if (!lobbyPrev.has(id)) lobbyLog(`<b>${escHtml(nm)}</b> joined the party.`);
+    for (const [id, nm] of lobbyPrev) if (!names.has(id)) lobbyLog(`${escHtml(nm)} left the party.`);
+  }
+  lobbyPrev = names;
   // everyone else who has the game open
   const list = $('onlineList'); list.textContent = '';
-  const inParty = new Set(members.map(m => m.id));
+  const inParty = new Set(ids);
   let n = 0;
   for (const [id, r] of remotes) {
     const p = r.last; if (!p || p.g !== NET_TAG) continue; n++;
@@ -3488,35 +3549,55 @@ function renderLobby() {
     else if (lead && mode > 1) {
       const full = members.length >= mode, b = el('button', 'mini', invited.has(id) ? 'Invited' : full ? 'Party full' : 'Invite');
       b.disabled = full || invited.has(id);
-      b.addEventListener('click', () => { invited.add(id); inviteSerial++; renderLobby(); });
+      b.addEventListener('click', () => { invited.add(id); inviteSerial++; lobbyLog(`You invited <b>${escHtml(nm)}</b>.`); renderLobby(); });
       row.append(b);
     } else row.append(el('em', '', lead ? 'Pick Duos, Trios or Squads to invite' : 'In the lobby'));
     list.append(row);
   }
   if (!n) list.append(el('div', 'onote', net ? 'Nobody else is here right now. Send this page’s link to a friend: when they open it they show up here and you can invite them.' : 'Offline: you can still play every mode against AI teams.'));
+  setText('onlineChip', `● ${n + 1} online`);
   // invitations sent to me
   const box = $('invites'); box.textContent = '';
   for (const [id, r] of remotes) {
     const p = r.last; if (!p || p.g !== NET_TAG || id === myLeader || !Array.isArray(p.inv) || !p.inv.includes(me.id)) continue;
-    if (declined.has(id + ':' + (p.ivs | 0))) continue;
-    const card = el('div', 'inv'), nm = cleanName(p.n) || 'Player';
-    card.append(el('span', '', `${nm} invited you to a ${MODES[clamp(p.md | 0, 1, 4) || 1]} party`));
+    const key = id + ':' + (p.ivs | 0);
+    if (declined.has(key)) continue;
+    const nm = cleanName(p.n) || 'Player', md = MODES[clamp(p.md | 0, 1, 4) || 1];
+    if (!seenInvites.has(key)) { seenInvites.add(key); lobbyLog(`<b>${escHtml(nm)}</b> invited you to a ${md} party.`); sfx.kill(); }
+    const card = el('div', 'inv');
+    card.append(el('span', '', `${nm} invited you to a ${md} party`));
     const acc = el('button', 'mini on', 'Accept'), dec = el('button', 'mini', 'Decline');
-    acc.addEventListener('click', () => { myLeader = id; invited.clear(); sfx.init(); sfx.spawn(); renderLobby(); });
-    dec.addEventListener('click', () => { declined.add(id + ':' + (p.ivs | 0)); renderLobby(); });
+    acc.addEventListener('click', () => { myLeader = id; myReady = false; invited.clear(); lobbyPrev = null; sfx.init(); sfx.spawn(); lobbyLog(`You joined <b>${escHtml(nm)}</b>’s party.`); renderLobby(); });
+    dec.addEventListener('click', () => { declined.add(key); renderLobby(); });
     card.append(acc, dec); box.append(card);
   }
-  // the play button: the leader starts; members drop in once the leader is in a match
+  // your record
+  setText('stWins', String(store.get('wins', 0) | 0)); setText('stKills', String(store.get('kills', 0) | 0));
+  setText('stMatches', String(store.get('matches', 0) | 0)); setText('stStreak', String(bestStreak));
+  // the big button: the leader plays; members ready up, then drop in once the leader is in a match
   const pb = $('playBtn');
-  if (lead) { pb.disabled = false; pb.textContent = `Play ${MODES[mode]}`; setText('partyNote', members.length > 1 ? `· ${members.length} of ${mode}` : ''); }
-  else {
+  pb.classList.toggle('ready', !lead && myReady);
+  if (lead) {
+    pb.disabled = false; pb.textContent = 'Play';
+    const others = members.filter(m => !m.you), ready = others.filter(m => m.status === 'Ready').length;
+    setText('partyNote', others.length ? `${members.length} of ${mode} · ${ready} ready` : mode > 1 ? `Just you · ${mode - 1} open slot${mode > 2 ? 's' : ''}` : 'Just you');
+  } else {
     const lp = presOf(myLeader), lname = lp ? cleanName(lp.n) || 'your leader' : 'your leader';
-    pb.disabled = !(lp && lp.pl); pb.textContent = lp && lp.pl ? 'Drop in with your party' : `Waiting for ${lname} to start`;
-    setText('partyNote', `· led by ${lname}`);
+    pb.disabled = false;
+    pb.textContent = lp && lp.pl ? 'Drop in' : myReady ? 'Ready ✓' : 'Ready up';
+    setText('partyNote', lp && lp.pl ? `${lname} is in a match` : `Led by ${lname}`);
   }
 }
-$('modes').addEventListener('click', e => { const m = e.target && e.target.dataset ? e.target.dataset.m | 0 : 0; if (!m || myLeader) return; myMode = m; store.set('mode', m); if (m === 1) invited.clear(); renderLobby(); });
-$('leaveBtn').addEventListener('click', () => { myLeader = null; renderLobby(); });
+$('changeMode').addEventListener('click', () => { if (myLeader) return; myMode = myMode % 4 + 1; store.set('mode', myMode); if (myMode === 1) invited.clear(); sfx.init(); sfx.draw(); renderLobby(); });
+$('navHelp').addEventListener('click', () => { refreshKeyHelp(); show('sHelp'); });
+$('helpDone').addEventListener('click', () => { show('sMenu'); renderLobby(); });
+$('slotLabels').addEventListener('click', e => {
+  const b = e.target.closest && e.target.closest('.slotplus'); if (!b || myLeader) return;
+  const pr = $('lprofile'); pr.classList.remove('flash'); void pr.offsetWidth; pr.classList.add('flash');
+  const anyone = [...remotes.values()].some(r => r.last && r.last.g === NET_TAG && !r.last.pl);
+  lobbyLog(anyone ? 'Pick someone under <b>Online now</b> and press Invite.' : 'Nobody else is online. Send this page’s link to a friend, then invite them here.');
+});
+$('leaveBtn').addEventListener('click', () => { lobbyLog('You left the party.'); myLeader = null; myReady = false; lobbyPrev = null; renderLobby(); });
 // the callsign shows in everyone's lobby as you type it
 $('callsign').addEventListener('input', () => { const n = cleanName($('callsign').value); if (n) { settings.name = n; me.name = n; knownNames.set(me.id, n); } });
 LOBBY_OK = true;
@@ -4222,7 +4303,8 @@ function updateFpsBox() {
 // a wall, a build or a hill is behind you, and moves in closer while you aim down sights.
 const _tpH = new V3(), _tpD = new V3(), _tpR = new V3(), _tpW = new V3(), _tpRay = new THREE.Raycaster();
 let tpDist = 3.2;
-function thirdPerson() { return settings.camera !== 'first' && inGame && me.alive && state !== 'menu'; }
+// aiming down sights always goes to the first-person view: the gun comes up to your eye with its red dot (or bead)
+function thirdPerson() { return settings.camera !== 'first' && inGame && me.alive && state !== 'menu' && !adsActive(); }
 function tpNear() { return thirdPerson() && !dropping ? camera.position.distanceTo(_tpH) + 0.35 : 0; }
 function tpCamera(dt) {
   const ads = vm.ads;
@@ -4240,6 +4322,137 @@ function tpCamera(dt) {
   camera.position.copy(_tpH).addScaledVector(_tpW, tpDist);
   const gy = terrainH(camera.position.x, camera.position.z) + 0.35; if (camera.position.y < gy) camera.position.y = gy;
 }
+
+/* ================= Lobby stage ================= */
+// The party stands on lantern-lit platforms in a clearing at night: you in the middle, the others beside you.
+const L3 = (() => {
+  const sc = new THREE.Scene();
+  const skyC = makeCanvas(1024, 512, (g, w, h) => {
+    const gr = g.createLinearGradient(0, 0, 0, h);
+    gr.addColorStop(0, '#060a1c'); gr.addColorStop(0.45, '#121a3a'); gr.addColorStop(0.72, '#2a2448'); gr.addColorStop(0.86, '#3b2b44'); gr.addColorStop(1, '#151020');
+    g.fillStyle = gr; g.fillRect(0, 0, w, h);
+    for (let i = 0; i < 520; i++) { const y = Math.pow(TR(), 1.6) * h * 0.7, a = 0.25 + TR() * 0.75, r = TR() < 0.94 ? 0.7 : 1.3; g.fillStyle = `rgba(255,${235 + TR() * 20 | 0},${215 + TR() * 40 | 0},${a})`; g.beginPath(); g.arc(TR() * w, y, r, 0, 6.28); g.fill(); }
+    const mx = w * 0.74, my = h * 0.2, halo = g.createRadialGradient(mx, my, 10, mx, my, 120);
+    halo.addColorStop(0, 'rgba(220,226,255,0.45)'); halo.addColorStop(1, 'rgba(220,226,255,0)'); g.fillStyle = halo; g.fillRect(mx - 130, my - 130, 260, 260);
+    const moon = g.createRadialGradient(mx - 6, my - 6, 2, mx, my, 24); moon.addColorStop(0, '#fbf8ee'); moon.addColorStop(1, '#d8d6ce');
+    g.fillStyle = moon; g.beginPath(); g.arc(mx, my, 22, 0, 6.28); g.fill();
+    g.fillStyle = 'rgba(160,160,170,0.25)'; for (const [dx, dy, r] of [[-7, -4, 5], [6, 5, 4], [3, -9, 3]]) { g.beginPath(); g.arc(mx + dx, my + dy, r, 0, 6.28); g.fill(); }
+  });
+  const skyTex = new THREE.CanvasTexture(skyC); skyTex.encoding = THREE.sRGBEncoding; sc.background = skyTex;
+  sc.fog = new THREE.Fog(0x1b1a34, 12, 42);
+  const cam = new THREE.PerspectiveCamera(32, 1, 0.1, 140);
+  sc.add(new THREE.HemisphereLight(0x8a9cff, 0x241812, 0.62));
+  const moonL = new THREE.DirectionalLight(0xb9c7ff, 1.1); moonL.position.set(-5, 7, -8); sc.add(moonL);
+  const key = new THREE.DirectionalLight(0xffc790, 1.25); key.position.set(4, 6, 8); sc.add(key);
+  // ground: the meadow texture, darkened by the night
+  const gt = groundTex.clone(); gt.needsUpdate = true; gt.repeat.set(14, 14);
+  const ground = new THREE.Mesh(new THREE.CircleGeometry(40, 64), new THREE.MeshStandardMaterial({ map: gt, color: 0x8a8a7a, roughness: 1 }));
+  ground.rotation.x = -Math.PI / 2; sc.add(ground);
+  // a dark treeline round the clearing
+  const coneM = new THREE.MeshLambertMaterial({ color: 0x0f1a14 }), trunkM = new THREE.MeshLambertMaterial({ color: 0x1a120c });
+  for (let i = 0; i < 70; i++) {
+    const a = Math.PI * (0.05 + 0.9 * (i / 70)) + (TR() - 0.5) * 0.05, r = 13 + TR() * 12, h = 5 + TR() * 7;
+    const x = Math.cos(a) * r * 1.3, z = -Math.sin(a) * r;
+    const c = new THREE.Mesh(new THREE.ConeGeometry(h * 0.22, h, 7), coneM); c.position.set(x, h / 2 + 0.6, z); sc.add(c);
+    const t = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.16, 1.2, 6), trunkM); t.position.set(x, 0.6, z); sc.add(t);
+  }
+  // platforms: dark stone, plank top, a glowing ring and a lantern light each
+  const stoneM = new THREE.MeshStandardMaterial({ color: 0x3b3742, roughness: 0.9 });
+  const topM = new THREE.MeshStandardMaterial({ map: plankTex, color: 0xb59b84, roughness: 0.8 });
+  const pads = [];
+  for (let i = 0; i < 4; i++) {
+    const g = new THREE.Group();
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.98, 1.08, 0.22, 40), stoneM); base.position.y = 0.11; g.add(base);
+    const top = new THREE.Mesh(new THREE.CylinderGeometry(0.86, 0.86, 0.04, 40), topM); top.position.y = 0.24; g.add(top);
+    const ringM = new THREE.MeshBasicMaterial({ color: 0xffb066, toneMapped: false });
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.93, 0.025, 8, 64), ringM); ring.rotation.x = Math.PI / 2; ring.position.y = 0.235; g.add(ring);
+    const lamp = new THREE.PointLight(0xffa860, 1.2, 4.2, 2); lamp.position.set(0, 0.9, 0.9); g.add(lamp);
+    sc.add(g); pads.push({ g, ring, ringM, lamp });
+  }
+  // fireflies drifting over the grass
+  const N = 70, fpos = new Float32Array(N * 3), seeds = [];
+  for (let i = 0; i < N; i++) { seeds.push([(TR() - 0.5) * 16, 0.3 + TR() * 2.4, -1 - TR() * 9, TR() * 6.28]); }
+  const fgeo = new THREE.BufferGeometry(); fgeo.setAttribute('position', new THREE.BufferAttribute(fpos, 3));
+  const fly = new THREE.Points(fgeo, new THREE.PointsMaterial({ color: 0xffd27a, size: 0.07, transparent: true, opacity: 0.9, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false }));
+  sc.add(fly);
+  fixTree(sc);
+  return { sc, cam, pads, fly, fpos, seeds, people: new Map(), t: 0 };
+})();
+// where each party slot stands: you in the middle, then right, left, far right
+const L3_LAYOUT = { 1: [[0, 0]], 2: [[-0.95, 0], [0.95, -0.35]], 3: [[0, 0], [1.75, -0.55], [-1.75, -0.55]], 4: [[0, 0], [1.75, -0.55], [-1.75, -0.55], [0.95, -2.1]] };
+const L3_CAM = { 1: [0, 1.62, 6.4, 0, 1.05, 0], 2: [0, 1.72, 7.6, 0, 1.0, -0.1], 3: [0, 1.85, 9.2, 0, 1.0, -0.4], 4: [0, 1.95, 10.0, 0, 1.0, -0.7] };
+let l3Slots = [];          // [{ id, name, you, lead, status, x, z }] for this frame, in slot order
+function lobbyStageSlots() {
+  const n = partyMode(), members = partyMembers(), out = [];
+  const meM = members.find(m => m.you), others = members.filter(m => !m.you);
+  const order = [meM, ...others];
+  const lay = L3_LAYOUT[n] || L3_LAYOUT[1];
+  for (let i = 0; i < n; i++) out.push({ ...(order[i] || {}), empty: !order[i], x: lay[i][0], z: lay[i][1] });
+  return out;
+}
+function l3Person(m) {
+  let p = L3.people.get(m.id);
+  if (!p) {
+    const pres = m.you ? null : presOf(m.id), color = m.you ? me.color : ((pres && pres.c) | 0) % PAL.length;
+    const model = buildSoldier(color, m.name); fixTree(model.root); model.tag.visible = false; L3.sc.add(model.root);
+    p = { model, ent: { id: 'lobby-' + m.id, kind: 'remote', local: true, model, pos: new V3(), vel: new V3(), yaw: Math.PI, pitch: 0, alive: true, dropping: false, walk: 0, deadT: 0, gait: 0, tw: 1, tst: 0, color }, color, name: m.name };
+    L3.people.set(m.id, p);
+  }
+  return p;
+}
+const _l3v = new V3();
+function renderLobbyStage(dt) {
+  const n = partyMode(), c = L3_CAM[n] || L3_CAM[1];
+  L3.t += dt;
+  // ease the camera to the party size
+  // tall, narrow screens (phones held upright) need the camera further back to fit everyone in
+  const k = L3.cam.aspect < 0.9 ? 1.7 : L3.cam.aspect < 1.3 ? 1.25 : 1;
+  const target = new V3(c[0], c[1] + (k - 1) * 0.5, c[5] + (c[2] - c[5]) * k);
+  if (!L3.camInit) { L3.cam.position.copy(target); L3.camInit = true; } else L3.cam.position.lerp(target, Math.min(1, dt * 3));
+  L3.cam.lookAt(c[3], c[4] + (k - 1) * 0.55, c[5]);
+  l3Slots = lobbyStageSlots();
+  const seen = new Set();
+  L3.pads.forEach((pad, i) => {
+    const s = l3Slots[i];
+    pad.g.visible = !!s;
+    if (!s) return;
+    pad.g.position.set(s.x, 0, s.z);
+    const glow = s.empty ? 0.25 : s.you ? 1 : 0.7;
+    pad.ringM.color.setRGB(1.0 * glow + 0.08, 0.66 * glow + 0.05, 0.38 * glow + 0.04);
+    pad.lamp.intensity = s.empty ? 0.25 : 1.2 + Math.sin(L3.t * 3 + i) * 0.08;
+    if (s.empty) return;
+    seen.add(s.id);
+    const p = l3Person(s);
+    if (p.name !== s.name) { setSoldierName(p.model, s.name); p.model.tag.visible = false; p.name = s.name; }
+    p.ent.pos.set(s.x, 0.26, s.z);
+    p.ent.yaw = Math.PI + Math.atan2(s.x - L3.cam.position.x, L3.cam.position.z - s.z) * 0.6 + Math.sin(L3.t * 0.4 + i) * 0.05;
+    animateSoldier(p.ent, dt); p.model.tag.visible = false; p.model.root.visible = true;
+  });
+  for (const [id, p] of L3.people) if (!seen.has(id)) { L3.sc.remove(p.model.root); L3.people.delete(id); }
+  // fireflies
+  for (let i = 0; i < L3.seeds.length; i++) { const [x, y, z, ph] = L3.seeds[i], t = L3.t * 0.35 + ph; L3.fpos[i * 3] = x + Math.sin(t * 1.3) * 0.8; L3.fpos[i * 3 + 1] = y + Math.sin(t * 2.1) * 0.25; L3.fpos[i * 3 + 2] = z + Math.cos(t) * 0.6; }
+  L3.fly.geometry.attributes.position.needsUpdate = true; L3.fly.material.opacity = 0.6 + Math.sin(L3.t * 5) * 0.3;
+  renderer.render(L3.sc, L3.cam);
+  placeSlotLabels();
+}
+// names, ready status and invite buttons float over the platforms
+function placeSlotLabels() {
+  const box = $('slotLabels'); if (!box) return;
+  const w = window.innerWidth, h = window.innerHeight, lead = !myLeader;
+  let html = '';
+  l3Slots.forEach((s, i) => {
+    _l3v.set(s.x, s.empty ? 1.05 : 2.2, s.z).project(L3.cam);
+    const x = (_l3v.x * 0.5 + 0.5) * w, y = (-_l3v.y * 0.5 + 0.5) * h;
+    if (s.empty) {
+      html += `<button class="slotplus${lead ? '' : ' off'}" data-slot="${i}" style="left:${x.toFixed(0)}px;top:${y.toFixed(0)}px" aria-label="Invite a player">+</button>`;
+    } else {
+      const st = s.status, cls = st === 'Ready' || st === 'Leader' ? 'ok' : st === 'In a match' ? 'busy' : 'wait';
+      html += `<div class="slotlab" style="left:${x.toFixed(0)}px;top:${y.toFixed(0)}px"><b>${s.lead ? '★ ' : ''}${escHtml(s.name)}${s.you ? ' <i>you</i>' : ''}</b><span class="${cls}">${st}</span></div>`;
+    }
+  });
+  if (box._html !== html) { box._html = html; box.innerHTML = html; }
+}
+function escHtml(t) { return String(t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]); }
 
 /* ================= Player ================= */
 const myCanopy = makeCanopy(PAL[me.color % PAL.length]); myCanopy.visible = false; scene.add(myCanopy);
@@ -4567,7 +4780,7 @@ function updatePlayer(dt) {
 }
 
 /* ================= Flow ================= */
-function show(id) { for (const s of ['sMenu', 'sPause', 'sSettings']) $(s).hidden = s !== id; }
+function show(id) { for (const s of ['sMenu', 'sPause', 'sSettings', 'sHelp']) $(s).hidden = s !== id; }
 function setPlayingUI(on) {
   $('hud').hidden = !on;
   $('touch').hidden = !(on && isTouch);
@@ -4631,11 +4844,12 @@ function quitToMenu() {
   setBuildMode(false); if (editing) stopEdit(false); clearBuilds(); GAS.planId = -1; scene.fog.color.copy(fogBase.c); scene.fog.density = fogBase.d; $('gasFx').style.opacity = '0'; gasWall.visible = false;
   for (const e of [...ents.values()]) removeEnt(e);
   iAmHost = true; show('sMenu'); updateNetUI();
-  $('menuBest').textContent = bestStreak ? `Best streak ${bestStreak}` : '';
+  $('menuBest').textContent = '';
+  myReady = false; renderLobby();
 }
 
 /* ================= Input ================= */
-$('playBtn').addEventListener('click', startGame);
+$('playBtn').addEventListener('click', () => { const lp = myLeader ? presOf(myLeader) : null; if (myLeader && !(lp && lp.pl)) { myReady = !myReady; sfx.init(); sfx.draw(); renderLobby(); } else startGame(); });
 $('quitBtn').addEventListener('click', () => { if (document.pointerLockElement) document.exitPointerLock?.(); quitToMenu(); });
 $('resumeBtn').addEventListener('click', () => { sfx.init(); if (!isTouch && !fallback) lock(); else resume(); });
 $('tPause').addEventListener('click', pause);
@@ -4809,6 +5023,7 @@ function resize() {
   renderer.setSize(w, h, false);
   camera.aspect = w / h; camera.updateProjectionMatrix();
   gunCam.aspect = w / h; gunCam.updateProjectionMatrix();
+  L3.cam.aspect = w / h; L3.cam.updateProjectionMatrix();
 }
 window.addEventListener('resize', resize);
 resize();
@@ -4877,13 +5092,14 @@ function frame(now) {
   if (sunCheckT <= 0) { sunCheckT = 0.15; sunSeen = hasLOS(camera.position, vD.copy(sunDirN).multiplyScalar(70).add(camera.position)) ? 1 : 0; }
   gunSun.intensity += ((sunSeen ? 2.8 : 0.5) - gunSun.intensity) * Math.min(1, dt * 6);
   renderer.clear();
-  renderer.render(scene, camera);
+  if (state === 'menu' && !inGame) renderLobbyStage(dt); else renderer.render(scene, camera);
   myCanopy.visible = false;
   if (myCanopy.visible) { myCanopy.position.set(player.pos.x, player.pos.y + 0.4, player.pos.z); myCanopy.rotation.y = player.yaw; }
   if (inGame && me.alive && !dropping && !thirdPerson()) { renderer.clearDepth(); renderer.render(gunScene, gunCam); }
 }
 fixTree(scene); fixTree(gunScene);
 applyAllSettings();
+try { renderer.compile(scene, camera); } catch (e) {}
 setPlayingUI(false);
 updateNetUI();
 requestAnimationFrame(frame);
