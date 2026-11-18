@@ -4043,6 +4043,7 @@ const SET = [
   ['controls', 'invert', 'Invert up and down', 'check', { def: false }],
   ['controls', 'aimHold', 'Right mouse button', 'select', { def: 'hold', options: [['hold', 'Hold to aim'], ['toggle', 'Click to aim, click again to stop']] }],
   ['controls', 'crouchHold', 'Crouch key', 'select', { def: 'toggle', options: [['toggle', 'Press to crouch, press again to stand'], ['hold', 'Hold to crouch']] }],
+  ['controls', 'editRelease', 'Edit on release: hold the edit key, let go to confirm', 'check', { def: true }],
   ['controls', 'autoSprint', 'Always sprint when moving forward', 'check', { def: false }],
   ['controls', 'wheel', 'Two-finger touchpad swipe aims', 'check', { def: true }],
   ['controls', 'autofire', 'Auto-fire when the crosshair is on an enemy', 'check', { def: true }],
@@ -4132,7 +4133,7 @@ function refreshKeyHelp() {
     [k('crouch'), 'Crouch · press while sprinting to slide'],
     [`${k('w1')} · ${k('w2')} · ${k('w3')}`, 'Rifle · knife · pump shotgun'],
     [`${k('build')} · ${k('bw')} ${k('bf')} ${k('br')} ${k('bc')}`, 'Build mode · wall, floor, ramp, roof straight away. Click places'],
-    [k('edit'), 'Edit the piece you aim at: click tiles, press again to confirm'],
+    [k('edit'), settings.editRelease ? 'Hold to edit the piece you aim at, click or drag tiles, let go to confirm' : 'Edit the piece you aim at: click tiles, press again to confirm'],
     [`${k('reload')} · ${k('board')} · Esc`, 'Reload · scoreboard · pause'],
   ];
   box.textContent = ''; for (const [a, b] of rows) box.append(el('b', '', a), el('span', '', b));
@@ -4184,6 +4185,7 @@ function applySetting(k) {
   else if (k === 'fps') $('fpsBox').hidden = !settings.fps;
   else if (k === 'tips') $('tip').style.visibility = settings.tips ? '' : 'hidden';
   else if (k === 'gfx' || k === 'scale' || k === 'grass' || k === 'shadows') applyGfx();
+  else if (k === 'editRelease') refreshKeyHelp();
 }
 function applyAllSettings() { for (const k of ['bright', 'vol', 'xcol', 'xsize', 'minimap', 'feed', 'fps', 'tips', 'gfx']) applySetting(k); refreshKeyHelp(); }
 function openSettings() {
@@ -4644,6 +4646,7 @@ window.addEventListener('keydown', e0 => {
 window.addEventListener('keyup', e0 => {
   const e = keyEv(e0);
   keys.delete(e.code);
+  if ((e.code === 'KeyG' || e.code === 'KeyE') && settings.editRelease && editing && state === 'playing') stopEdit(true);
   if (e.code === 'KeyC' && settings.crouchHold === 'hold' && crouchHeld && slideT <= 0) crouchHeld = false;
   if (e.code === 'Tab') { boardOpen = false; $('board').hidden = true; }
 });
