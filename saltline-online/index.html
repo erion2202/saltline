@@ -2284,7 +2284,7 @@ function switchWeapon(n) {
   if (n === 2) { equipKnifeHand(); sfx.draw(); } else if (n === 3) { equipShotgunHands(); sfx.pump(true); setTimeout(() => sfx.pump(false), 160); } else sfx.charge();
   sgLoad = null;
 }
-function startSwing() { swingT = 0; swingHit = false; sfx.swish(); }
+function startSwing() { swingT = 0; swingHit = false; sfx.swish(); selfView.knifeT = 0.35; }
 const _kf = new V3(), _kr = new V3(), _ku = new V3(), _kd = new V3();
 function knifeHit() {
   camera.updateMatrixWorld();
@@ -2295,7 +2295,7 @@ function knifeHit() {
   // a fan of short rays across the slash, so a swing that clips someone counts
   outer: for (const po of [0, -0.16, 0.12]) for (const yo of [0, 0.2, -0.2, 0.4, -0.4]) {
     _kd.copy(_kf).addScaledVector(_kr, Math.sin(yo)).addScaledVector(_ku, Math.sin(po)).normalize();
-    ray.set(camera.position, _kd); ray.far = 2.3;
+    ray.set(thirdPerson() ? _tpH : camera.position, _kd); ray.far = 2.3;
     const h = ray.intersectObjects(targets, false)[0];
     if (!h) continue;
     const ent = h.object.userData.ent;
@@ -2441,16 +2441,18 @@ function fireShotgun() {
   const cone = sgCone(), dmgBy = new Map();
   sgG.updateMatrixWorld(true);
   camera.localToWorld(sgFlash.getWorldPosition(vA));
+  if (thirdPerson() && selfView.model) { selfView.model.muzzle.getWorldPosition(vA); selfView.flashT = 0.07; }
+  const tpOff = Math.max(0, tpNear() - 0.35);
   let impacts = 0, center = null; const bdm = new Map();
   for (let i = 0; i < SG_PELLETS; i++) {
     const ang = Math.random() * Math.PI * 2, rad = (i === 0 ? 0 : Math.pow(Math.random(), 0.85)) * cone;
     _pd.copy(_pf).addScaledVector(_pr2, Math.cos(ang) * rad).addScaledVector(_pu, Math.sin(ang) * rad).normalize();
-    ray.set(camera.position, _pd); ray.far = 60;
+    ray.set(camera.position, _pd); ray.far = 60 + tpOff; ray.near = tpNear();
     const h = ray.intersectObjects(targets, false)[0];
     const end = h ? h.point.clone() : _pd.clone().multiplyScalar(60).add(camera.position);
     if (i === 0) center = end.clone();
     if (h && h.object.userData.ent) {
-      const ent = h.object.userData.ent, part = h.object.userData.part, d = h.distance;
+      const ent = h.object.userData.ent, part = h.object.userData.part, d = Math.max(0, h.distance - tpOff);
       const fall = d <= 8 ? 1 : d >= 45 ? 0 : d <= 30 ? 1 - (d - 8) / 22 * 0.7 : 0.3 * (1 - (d - 30) / 15);
       const dm = 13 * fall * (part === 'head' ? 1.5 : part === 'limb' ? 0.8 : 1);
       const cur = dmgBy.get(ent) || { dmg: 0, crit: false, point: h.point }; cur.dmg += dm; cur.crit = cur.crit || part === 'head'; dmgBy.set(ent, cur);
@@ -2459,6 +2461,7 @@ function fireShotgun() {
     if (i % 2 === 0) tracer(vA, end, 0.008);
   }
   for (const [bd, dm] of bdm) if (dm >= 1) damageBuild(bd, Math.round(dm), me.id);
+  ray.near = 0;
   let anyHit = false, crit = false;
   for (const [ent, r] of dmgBy) { if (r.dmg < 0.5) continue; applyDamage(ent, Math.round(r.dmg), me.id, r.crit); anyHit = true; crit = crit || r.crit; }
   if (anyHit) { hitmarkT = 0.16; $('hitmark').className = crit ? 'on crit' : 'on'; sfx.hit(crit); }
@@ -3571,12 +3574,14 @@ function teamPlace() {
 const selfView = { id: 'self', kind: 'self', name: '', color: me.color, local: true, model: null, pos: player.pos, vel: player.vel, yaw: 0, pitch: 0, alive: true, dropping: true, walk: 0, deadT: 0, gait: 0 };
 const _tpc = new V3();
 function updateSelfView(dt) {
-  const show = inGame && me.alive && dropping;
+  const show = inGame && me.alive && (dropping || thirdPerson());
   if (show && !selfView.model) { selfView.model = buildSoldier(me.color, me.name); scene.add(selfView.model.root); fixTree(selfView.model.root); }
   if (!selfView.model) return;
   selfView.model.root.visible = show;
   if (!show) { if (selfView.model.canopy) selfView.model.canopy.visible = false; return; }
-  selfView.yaw = player.yaw; selfView.pitch = 0;
+  if (!dropping && tpDist < 0.95) { selfView.model.root.visible = false; return; }      // camera squeezed against you: don't fill the screen with your back
+  selfView.yaw = player.yaw; selfView.pitch = dropping ? 0 : player.pitch; selfView.dropping = dropping; selfView.kind = 'remote';
+  selfView.tw = buildMode || editing ? 0 : weapon; selfView.tst = slideT > 0 ? 2 : crouchHeld ? 1 : 0;
   animateSoldier(selfView, dt);
   selfView.model.tag.visible = false;
 }
@@ -3802,7 +3807,7 @@ function updateGhost(s, ok) {
 const _er = new V3();
 function aimedPiece(maxD) {
   camera.updateMatrixWorld(); camera.getWorldDirection(_er);
-  ray.set(camera.position, _er); ray.far = maxD;
+  ray.set(camera.position, _er); ray.far = maxD + (thirdPerson() ? tpDist + 0.4 : 0);
   const h = ray.intersectObjects([...builds.values()].map(b => b.mesh), false)[0];
   return h ? h.object.userData.build : null;
 }
@@ -4038,6 +4043,7 @@ function gasTargetFor(e) {
 // One screen with tabs, reachable from the lobby and the pause menu. Everything is saved in this browser.
 const pctF = v => Math.round(v * 100) + '%';
 const SET = [
+  ['controls', 'camera', 'Camera', 'select', { def: 'third', options: [['third', 'Third person (over the shoulder)'], ['first', 'First person']] }],
   ['controls', 'sens', 'Mouse sensitivity', 'range', { min: 0.1, max: 4, step: 0.05, def: 1, fmt: v => (+v).toFixed(2) }],
   ['controls', 'adsSens', 'Sensitivity while aiming', 'range', { min: 0.2, max: 1.5, step: 0.02, def: 0.62, fmt: pctF }],
   ['controls', 'invert', 'Invert up and down', 'check', { def: false }],
@@ -4079,7 +4085,7 @@ const KEY_ACTIONS = [
   ['fire', 'Fire (key, besides the mouse)', 'KeyF'], ['aim', 'Aim on / off', 'KeyQ'], ['reload', 'Reload · turn a ramp', 'KeyR'],
   ['w1', 'Rifle · wall in build mode', 'Digit1'], ['w2', 'Knife · floor in build mode', 'Digit2'], ['w3', 'Shotgun · ramp in build mode', 'Digit3'], ['w4', 'Roof in build mode', 'Digit4'],
   ['build', 'Build mode on / off', 'KeyB'], ['bw', 'Build a wall', 'KeyZ'], ['bf', 'Build a floor', 'KeyX'], ['br', 'Build a ramp', 'KeyV'], ['bc', 'Build a roof', 'KeyT'],
-  ['edit', 'Edit a piece · confirm the edit', 'KeyG'], ['board', 'Scoreboard (hold)', 'Tab'], ['pause', 'Pause', 'KeyP'], ['mute', 'Mute', 'KeyM'],
+  ['edit', 'Edit a piece · confirm the edit', 'KeyG'], ['board', 'Scoreboard (hold)', 'Tab'], ['camera', 'Switch first / third person', 'KeyH'], ['pause', 'Pause', 'KeyP'], ['mute', 'Mute', 'KeyM'],
 ];
 let binds = {};
 { const saved = store.get('binds', {}); for (const [id, , def] of KEY_ACTIONS) binds[id] = typeof saved[id] === 'string' ? saved[id] : def; }
@@ -4210,6 +4216,30 @@ function updateFpsBox() {
   if (now - fpsLast > 500) { $('fpsBox').textContent = Math.round(fpsCnt * 1000 / (now - fpsLast)) + ' FPS'; fpsCnt = 0; fpsLast = now; }
 }
 
+/* ================= Third-person camera ================= */
+// Over the right shoulder. The camera keeps your look direction (so the crosshair is where you aim), pulls in when
+// a wall, a build or a hill is behind you, and moves in closer while you aim down sights.
+const _tpH = new V3(), _tpD = new V3(), _tpR = new V3(), _tpW = new V3(), _tpRay = new THREE.Raycaster();
+let tpDist = 3.2;
+function thirdPerson() { return settings.camera !== 'first' && inGame && me.alive && state !== 'menu'; }
+function tpNear() { return thirdPerson() && !dropping ? camera.position.distanceTo(_tpH) + 0.35 : 0; }
+function tpCamera(dt) {
+  const ads = vm.ads;
+  _tpH.set(player.pos.x, player.pos.y + EYE + 0.12 - crouchT * (slideT > 0 ? 0.78 : 0.58), player.pos.z);   // pivot just above the head
+  camera.position.copy(_tpH); camera.updateMatrixWorld();
+  _tpR.setFromMatrixColumn(camera.matrixWorld, 0); camera.getWorldDirection(_tpD);
+  const back = 3.0 - ads * 1.6, side = 0.88 + ads * 0.02, up = 0.26 - ads * 0.1;
+  _tpW.copy(_tpH).addScaledVector(_tpR, side).addScaledVector(_tpD, -back); _tpW.y += up;
+  _tpW.sub(_tpH); const len = _tpW.length(); _tpW.normalize();
+  // don't let the camera go through what's behind you
+  _tpRay.set(_tpH, _tpW); _tpRay.far = len + 0.3; _tpRay.near = 0;
+  const h = _tpRay.intersectObjects(solids, false)[0];
+  const want = h ? Math.max(0.35, h.distance - 0.3) : len;
+  tpDist = want < tpDist ? want : tpDist + (want - tpDist) * Math.min(1, dt * 7);
+  camera.position.copy(_tpH).addScaledVector(_tpW, tpDist);
+  const gy = terrainH(camera.position.x, camera.position.z) + 0.35; if (camera.position.y < gy) camera.position.y = gy;
+}
+
 /* ================= Player ================= */
 const myCanopy = makeCanopy(PAL[me.color % PAL.length]); myCanopy.visible = false; scene.add(myCanopy);
 function respawnMe() {
@@ -4243,12 +4273,13 @@ function shoot() {
   _rt.setFromMatrixColumn(camera.matrixWorld, 0); _up.setFromMatrixColumn(camera.matrixWorld, 1);
   const ang = Math.random() * Math.PI * 2, rad = Math.sqrt(Math.random()) * spread;
   _fw.addScaledVector(_rt, Math.cos(ang) * rad).addScaledVector(_up, Math.sin(ang) * rad).normalize();
-  ray.set(camera.position, _fw); ray.far = 300;
+  ray.set(camera.position, _fw); ray.far = 300; ray.near = tpNear();
   const targets = solids.slice();
   for (const e of ents.values()) if (e.alive && !e.dropping) for (const m of e.model.hit) targets.push(m);
-  const hits = ray.intersectObjects(targets, false);
+  const hits = ray.intersectObjects(targets, false); ray.near = 0;
   gun.updateMatrixWorld(true);
   camera.localToWorld(muzzleObj.getWorldPosition(vA));
+  if (thirdPerson() && selfView.model) { selfView.model.muzzle.getWorldPosition(vA); selfView.flashT = 0.05; }
   let end;
   if (hits.length) {
     const h = hits[0]; end = h.point;
@@ -4517,7 +4548,7 @@ function updatePlayer(dt) {
     camera.position.set(player.pos.x, player.pos.y + EYE - crouchT * (slideT > 0 ? 0.78 : 0.58) - Math.abs(Math.sin(bobT * 0.5)) * 0.03 * bobAmt - vm.landing * 0.05, player.pos.z);
     camera.rotation.z += crouchT * (slideT > 0 ? 0.045 : 0);
     camera.rotation.set(player.pitch + punch * 0.012 + sx + Math.abs(Math.sin(bobT * 0.5)) * 0.006 * bobAmt, player.yaw + sx + Math.cos(bobT * 0.5) * 0.003 * bobAmt, Math.sin(bobT * 0.5) * 0.006 * bobAmt);
-    if (dropping) thirdPersonCam();
+    if (dropping) thirdPersonCam(); else if (thirdPerson()) tpCamera(dt);
   } else {
     deathT += dt;
     if (deathT <= 1.4 || BR.phase === 'end') {
@@ -4636,6 +4667,7 @@ window.addEventListener('keydown', e0 => {
     const dg = { Digit1: 1, Numpad1: 1, Digit2: 2, Numpad2: 2, Digit3: 3, Numpad3: 3, Digit4: 4, Numpad4: 4 }[e.code];
     if (dg && buildMode) setBuildMode(true, ['w', 'f', 'r', 'c'][dg - 1]);
     else if (dg && dg < 4) { if (editing) stopEdit(false); switchWeapon(dg); }
+    if (e.code === 'KeyH' && !e.repeat) setSetting('camera', settings.camera === 'first' ? 'third' : 'first');
     if (e.code === 'Tab') { boardOpen = true; renderBoard(); $('board').hidden = false; }
     if (e.code === 'KeyP' || (e.code === 'Escape' && fallback)) pause();
     if (e.code === 'KeyM') { setSetting('mute', !settings.mute); }
@@ -4749,7 +4781,7 @@ function updateHUD(dt) {
   setText('ammoLbl', weapon === 2 ? 'Knife · 50 damage' : weapon === 3 ? (sgLoad ? 'Loading shells' : 'Shells') : reload ? 'Reloading' : 'Rounds');
   $('ammoBig').hidden = weapon === 2; $('sl1').classList.toggle('on', weapon === 1); $('sl2').classList.toggle('on', weapon === 2); $('sl3').classList.toggle('on', weapon === 3);
   $('ammoLbl').classList.toggle('reloading', !!reload || !!sgLoad);
-  $('cross').classList.toggle('off', vm.ads > 0.5 || vm.sprint > 0.5 || !me.alive || dropping);
+  $('cross').classList.toggle('off', (!thirdPerson() && vm.ads > 0.5) || vm.sprint > 0.5 || !me.alive || dropping);
   $('cross').style.setProperty('--gap', (4 + currentSpread() * 520).toFixed(1) + 'px');
   $('hurt').style.opacity = Math.min(1, hurtFlash * 0.8 + (me.alive && me.hp <= 35 ? 0.3 + Math.sin(time * 5) * 0.08 : 0)).toFixed(3);
   for (const d of dmgEls) {
@@ -4847,7 +4879,7 @@ function frame(now) {
   renderer.render(scene, camera);
   myCanopy.visible = false;
   if (myCanopy.visible) { myCanopy.position.set(player.pos.x, player.pos.y + 0.4, player.pos.z); myCanopy.rotation.y = player.yaw; }
-  if (inGame && me.alive && !dropping) { renderer.clearDepth(); renderer.render(gunScene, gunCam); }
+  if (inGame && me.alive && !dropping && !thirdPerson()) { renderer.clearDepth(); renderer.render(gunScene, gunCam); }
 }
 fixTree(scene); fixTree(gunScene);
 applyAllSettings();
