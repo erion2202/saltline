@@ -4366,7 +4366,7 @@ function updatePlayer(dt) {
   const sliding = slideT > 0;
   const crouched = (crouchHeld || sliding) && me.alive;
   crouchT += ((crouched ? 1 : 0) - crouchT) * Math.min(1, dt * 10);
-  const speed = (sliding ? 0 : crouchHeld ? (ads ? 2.0 : 2.8) : ads ? 3.2 : sprinting ? 7.8 : 5.2) * (weapon === 2 ? 1.08 : 1);
+  const speed = (sliding ? 0 : crouchHeld ? (ads ? 2.0 : 2.8) : ads ? 2.9 : sprinting ? 7.8 : 4.6) * (weapon === 2 ? 1.08 : 1);
   const sy = Math.sin(player.yaw), cy = Math.cos(player.yaw);
   const wx = -sy * iz + cy * ix, wz = -cy * iz - sy * ix;
   if (sliding) {
