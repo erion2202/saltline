@@ -42,6 +42,19 @@ body{background:var(--ink);color:var(--salt);font-family:var(--mono);touch-actio
 #hAmmo.empty{color:var(--ember)}
 #ammoLbl.reloading{color:var(--apricot);opacity:1}
 #feed{gap:4px}
+#fpsBox{position:absolute;left:calc(18px + env(safe-area-inset-left,0px));top:calc(118px + env(safe-area-inset-top,0px));font-size:11px;letter-spacing:.1em;opacity:.8;text-shadow:0 1px 2px rgba(22,18,29,.9)}
+#sSettings{overflow-y:auto}
+#sSettings .panel{max-width:640px}
+.tabs{display:flex;gap:4px;flex-wrap:wrap}
+.tabs button{font:inherit;font-size:12px;letter-spacing:.12em;text-transform:uppercase;padding:7px 12px;background:rgba(22,18,29,.55);color:var(--salt);border:1px solid rgba(241,232,218,.3);cursor:pointer}
+.tabs button.on{border-color:var(--apricot);color:var(--apricot)}
+.setpane{display:flex;flex-direction:column;gap:2px;max-height:min(56vh,520px);overflow-y:auto;padding-right:6px}
+.setrow{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:12px;align-items:center;padding:7px 0;border-bottom:1px solid rgba(241,232,218,.1);font-size:13px}
+.setrow select{font:inherit;font-size:12px;background:rgba(22,18,29,.7);color:var(--salt);border:1px solid rgba(241,232,218,.35);padding:5px 6px;width:100%}
+.setrow .rng{display:flex;align-items:center;gap:10px}.setrow .rng input{flex:1;accent-color:var(--apricot)}.setrow .val{min-width:48px;text-align:right;font-size:12px;opacity:.85}
+.setrow .chk input{width:18px;height:18px;accent-color:var(--apricot)}
+.keybtn{font:inherit;font-size:12px;letter-spacing:.06em;padding:6px 10px;background:rgba(22,18,29,.6);color:var(--salt);border:1px solid rgba(241,232,218,.35);cursor:pointer;text-align:left}
+.keybtn.wait{border-color:var(--apricot);color:var(--apricot)}
 #feed.tr{top:calc(196px + env(safe-area-inset-top,0px))}
 #mini{position:absolute;top:calc(14px + env(safe-area-inset-top,0px));right:calc(18px + env(safe-area-inset-right,0px));width:168px;height:168px;border:1px solid rgba(241,232,218,.45);box-shadow:0 2px 14px rgba(0,0,0,.35)}
 #gasHud{position:absolute;top:calc(52px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);display:flex;align-items:baseline;gap:8px;background:rgba(22,18,29,.55);padding:3px 12px;font-size:11px;letter-spacing:.14em;text-transform:uppercase;white-space:nowrap}
@@ -81,8 +94,8 @@ body.building .corner.br .slots{opacity:.3}
 .kf .w{color:var(--salt-dim);font-size:11px;letter-spacing:.08em}
 .kf.mine{box-shadow:inset 0 0 0 1px var(--apricot)}
 
-#cross{position:absolute;left:50%;top:50%;width:0;height:0;--gap:7px;transition:opacity .12s}
-#cross i{position:absolute;background:var(--salt);box-shadow:0 0 0 1px rgba(22,18,29,.45)}
+#cross{position:absolute;left:50%;top:50%;width:0;height:0;--gap:7px;transition:opacity .12s;transform:scale(var(--xs,1))}
+#cross i{position:absolute;background:var(--xc,var(--salt));box-shadow:0 0 0 1px rgba(22,18,29,.45)}
 #cross i:nth-child(1){width:2px;height:8px;left:-1px;top:calc(-1 * var(--gap) - 8px)}
 #cross i:nth-child(2){width:2px;height:8px;left:-1px;top:var(--gap)}
 #cross i:nth-child(3){width:8px;height:2px;top:-1px;left:calc(-1 * var(--gap) - 8px)}
@@ -220,6 +233,7 @@ body.touch #feed{display:none}
   <div id="killMsg"></div>
   <div id="tip"></div>
   <div id="alive"><b id="aliveN">10</b><span>alive</span></div>
+  <div id="fpsBox" hidden></div>
   <div id="gasHud"><span id="gasL">Gas closes in</span><b id="gasT"></b></div>
   <div id="gasW"></div>
   <canvas id="mini" width="168" height="168"></canvas>
@@ -273,15 +287,10 @@ body.touch #feed{display:none}
       <div class="field"><label for="callsign">Callsign</label><input type="text" id="callsign" maxlength="16" autocomplete="off" spellcheck="false"></div>
       <div class="field"><label for="diff">AI skill</label>
         <select id="diff"><option value="recruit">Recruit</option><option value="regular">Regular</option><option value="veteran">Veteran</option></select></div>
-      <div class="field"><label for="gfx">Graphics</label>
-        <select id="gfx"><option value="auto">Auto</option><option value="high">High</option><option value="low">Low (faster)</option></select></div>
-      <div class="field"><label for="sens">Aim sensitivity <span id="sensOut">1.00</span></label><input type="range" id="sens" min="0.2" max="3" step="0.05"></div>
-      <div class="field"><span class="lab">Touchpad</span><label class="check" for="wheelAim"><input type="checkbox" id="wheelAim"> Two-finger swipe aims</label></div>
-      <div class="field"><span class="lab">Firing</span><label class="check" for="autofire"><input type="checkbox" id="autofire"> Auto-fire when the crosshair is on an enemy</label></div>
-      <div class="field"><span class="lab">Aiming</span><label class="check" for="assist"><input type="checkbox" id="assist"> Aim assist pulls toward nearby enemies</label></div>
     </div>
     <div class="row">
       <button class="btn" id="playBtn">Play</button>
+      <button class="btn alt" id="setBtn">Settings</button>
       <span class="meta" id="menuBest"></span>
     </div>
     <div class="keys" id="keysDesk">
@@ -308,14 +317,18 @@ body.touch #feed{display:none}
   <div class="panel">
     <div class="eyebrow" id="pauseEyebrow">Paused</div>
     <h2>Holding position</h2>
-    <div class="settings">
-      <div class="field"><label for="sens2">Aim sensitivity <span id="sensOut2">1.00</span></label><input type="range" id="sens2" min="0.2" max="3" step="0.05"></div>
-      <div class="field"><span class="lab">Touchpad</span><label class="check" for="wheelAim2"><input type="checkbox" id="wheelAim2"> Two-finger swipe aims</label></div>
-      <div class="field"><span class="lab">Firing</span><label class="check" for="autofire2"><input type="checkbox" id="autofire2"> Auto-fire when the crosshair is on an enemy</label></div>
-      <div class="field"><span class="lab">Aiming</span><label class="check" for="assist2"><input type="checkbox" id="assist2"> Aim assist pulls toward nearby enemies</label></div>
-    </div>
-    <div class="row"><button class="btn" id="resumeBtn">Resume</button><button class="btn alt" id="quitBtn">Leave match</button></div>
+    <div class="row"><button class="btn" id="resumeBtn">Resume</button><button class="btn alt" id="setBtn2">Settings</button><button class="btn alt" id="quitBtn">Leave match</button></div>
     <div class="note" id="pauseNote"></div>
+  </div>
+</section>
+
+<section class="screen" id="sSettings" hidden>
+  <div class="panel">
+    <div class="eyebrow">Onenight</div>
+    <h2>Settings</h2>
+    <div class="tabs" id="setTabs"><button data-t="controls">Controls</button><button data-t="keys">Keybinds</button><button data-t="video">Video</button><button data-t="audio">Audio</button><button data-t="hud">HUD</button></div>
+    <div class="setpane" id="tab_controls"></div><div class="setpane" id="tab_keys" hidden></div><div class="setpane" id="tab_video" hidden></div><div class="setpane" id="tab_audio" hidden></div><div class="setpane" id="tab_hud" hidden></div>
+    <div class="row"><button class="btn" id="setDone">Done</button><button class="mini" id="setReset">Reset this tab</button></div>
   </div>
 </section>
 
@@ -350,24 +363,9 @@ const settings = {
 let bestStreak = store.get('streak', 0) | 0;
 $('callsign').value = settings.name;
 $('diff').value = ['recruit', 'regular', 'veteran'].includes(settings.diff) ? settings.diff : 'regular';
-function syncSettingsUI() {
-  for (const s of ['', '2']) {
-    $('sens' + s).value = settings.sens; $('sensOut' + s).textContent = (+settings.sens).toFixed(2);
-    $('wheelAim' + s).checked = settings.wheel;
-    $('autofire' + s).checked = settings.autofire; $('assist' + s).checked = settings.assist;
-  }
-}
-syncSettingsUI();
+function syncSettingsUI() {}
 $('callsign').addEventListener('change', () => { settings.name = cleanName($('callsign').value) || settings.name; $('callsign').value = settings.name; store.set('name', settings.name); me.name = settings.name; });
 $('diff').addEventListener('change', () => { settings.diff = $('diff').value; store.set('diff', settings.diff); });
-$('gfx').value = settings.gfx;
-$('gfx').addEventListener('change', () => { settings.gfx = $('gfx').value; store.set('gfx', settings.gfx); applyGfx(); });
-for (const s of ['', '2']) {
-  $('sens' + s).addEventListener('input', e => { settings.sens = +e.target.value; store.set('sens', settings.sens); syncSettingsUI(); });
-  $('wheelAim' + s).addEventListener('change', e => { settings.wheel = e.target.checked; store.set('wheel', settings.wheel); syncSettingsUI(); });
-  $('autofire' + s).addEventListener('change', e => { settings.autofire = e.target.checked; store.set('autofire', settings.autofire); syncSettingsUI(); });
-  $('assist' + s).addEventListener('change', e => { settings.assist = e.target.checked; store.set('assist', settings.assist); syncSettingsUI(); });
-}
 $('menuBest').textContent = bestStreak ? `Best streak ${bestStreak}` : '';
 
 const SKILL = {
@@ -378,13 +376,13 @@ const SKILL = {
 
 /* ================= Audio ================= */
 const sfx = (() => {
-  let ctx = null, out = null, verb = null, noise = null, muted = false;
+  let ctx = null, out = null, verb = null, noise = null, muted = false, vol = 0.8;
   function init() {
     if (ctx) { if (ctx.state === 'suspended') ctx.resume(); return; }
     try {
       ctx = new (window.AudioContext || window.webkitAudioContext)();
       const comp = ctx.createDynamicsCompressor(); comp.threshold.value = -14; comp.ratio.value = 4; comp.connect(ctx.destination);
-      out = ctx.createGain(); out.gain.value = 0.55; out.connect(comp);
+      out = ctx.createGain(); out.gain.value = 0.6875 * vol; out.connect(comp);
       noise = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
       const d = noise.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
       const len = ctx.sampleRate * 1.8, ir = ctx.createBuffer(2, len, ctx.sampleRate);
@@ -418,7 +416,7 @@ const sfx = (() => {
   }
   const ok = () => ctx && !muted;
   return {
-    init, toggle() { muted = !muted; return muted; },
+    init, toggle() { muted = !muted; return muted; }, setVol(v) { vol = v; if (out) out.gain.value = 0.6875 * v; },
     // Rifle report: sharp crack, mid-band body, low thump, and the bolt's clack when it's your own rifle.
     shot(dist = 0, pan = 0) {
       if (!ok()) return;
@@ -4036,6 +4034,180 @@ function gasTargetFor(e) {
   return new V3(GAS.nx, terrainH(GAS.nx, GAS.nz), GAS.nz);
 }
 
+/* ================= Settings ================= */
+// One screen with tabs, reachable from the lobby and the pause menu. Everything is saved in this browser.
+const pctF = v => Math.round(v * 100) + '%';
+const SET = [
+  ['controls', 'sens', 'Mouse sensitivity', 'range', { min: 0.1, max: 4, step: 0.05, def: 1, fmt: v => (+v).toFixed(2) }],
+  ['controls', 'adsSens', 'Sensitivity while aiming', 'range', { min: 0.2, max: 1.5, step: 0.02, def: 0.62, fmt: pctF }],
+  ['controls', 'invert', 'Invert up and down', 'check', { def: false }],
+  ['controls', 'aimHold', 'Right mouse button', 'select', { def: 'hold', options: [['hold', 'Hold to aim'], ['toggle', 'Click to aim, click again to stop']] }],
+  ['controls', 'crouchHold', 'Crouch key', 'select', { def: 'toggle', options: [['toggle', 'Press to crouch, press again to stand'], ['hold', 'Hold to crouch']] }],
+  ['controls', 'autoSprint', 'Always sprint when moving forward', 'check', { def: false }],
+  ['controls', 'wheel', 'Two-finger touchpad swipe aims', 'check', { def: true }],
+  ['controls', 'autofire', 'Auto-fire when the crosshair is on an enemy', 'check', { def: true }],
+  ['controls', 'assist', 'Aim assist pulls toward nearby enemies', 'check', { def: true }],
+  ['video', 'gfx', 'Quality', 'select', { def: 'auto', options: [['auto', 'Auto: adjusts to your computer'], ['high', 'High'], ['low', 'Low (faster)'], ['custom', 'Custom']] }],
+  ['video', 'bright', 'Brightness', 'range', { min: 0.5, max: 1.6, step: 0.02, def: 1, fmt: pctF }],
+  ['video', 'fov', 'Field of view', 'range', { min: 60, max: 100, step: 1, def: 72, fmt: v => v + '°' }],
+  ['video', 'scale', 'Resolution', 'range', { min: 0.5, max: 1, step: 0.05, def: 1, fmt: pctF }],
+  ['video', 'shadows', 'Shadows', 'check', { def: true }],
+  ['video', 'grass', 'Grass', 'select', { def: '3', options: [['0', 'Off'], ['1', 'Close by only'], ['2', 'Medium'], ['3', 'Far']] }],
+  ['video', 'shake', 'Camera shake', 'range', { min: 0, max: 1, step: 0.05, def: 1, fmt: pctF }],
+  ['video', 'bob', 'Head bob when you walk', 'range', { min: 0, max: 1, step: 0.05, def: 1, fmt: pctF }],
+  ['audio', 'vol', 'Volume', 'range', { min: 0, max: 1, step: 0.01, def: 0.8, fmt: pctF }],
+  ['audio', 'mute', 'Mute all sound', 'check', { def: false }],
+  ['hud', 'xcol', 'Crosshair colour', 'select', { def: '#f1e8da', options: [['#f1e8da', 'White'], ['#6dff6a', 'Green'], ['#ffe14d', 'Yellow'], ['#55e4ff', 'Cyan'], ['#ff5252', 'Red'], ['#ff6fe2', 'Pink']] }],
+  ['hud', 'xsize', 'Crosshair size', 'range', { min: 0.6, max: 1.8, step: 0.05, def: 1, fmt: pctF }],
+  ['hud', 'minimap', 'Show the minimap', 'check', { def: true }],
+  ['hud', 'feed', 'Show who eliminated whom', 'check', { def: true }],
+  ['hud', 'fps', 'Show frames per second', 'check', { def: false }],
+  ['hud', 'tips', 'Show tips', 'check', { def: true }],
+];
+const SETDEF = {}; for (const [, k, , , o] of SET) SETDEF[k] = o.def;
+for (const [, k, , type, o] of SET) {
+  let v = store.get(k, o.def);
+  if (type === 'range') v = clamp(+v, o.min, o.max); else if (type === 'check') v = !!v; else if (!o.options.some(x => x[0] === String(v))) v = o.def;
+  settings[k] = type === 'select' ? String(v) : v;
+}
+// ---- keybinds: every action can be moved to another key; the game keeps reading the default codes, so a physical
+//      key is translated to the default key of the action it now triggers
+const KEY_ACTIONS = [
+  ['forward', 'Move forward', 'KeyW'], ['back', 'Move back', 'KeyS'], ['left', 'Move left', 'KeyA'], ['right', 'Move right', 'KeyD'],
+  ['jump', 'Jump', 'Space'], ['sprint', 'Sprint', 'ShiftLeft'], ['crouch', 'Crouch · slide when sprinting', 'KeyC'],
+  ['fire', 'Fire (key, besides the mouse)', 'KeyF'], ['aim', 'Aim on / off', 'KeyQ'], ['reload', 'Reload · turn a ramp', 'KeyR'],
+  ['w1', 'Rifle · wall in build mode', 'Digit1'], ['w2', 'Knife · floor in build mode', 'Digit2'], ['w3', 'Shotgun · ramp in build mode', 'Digit3'], ['w4', 'Roof in build mode', 'Digit4'],
+  ['build', 'Build mode on / off', 'KeyB'], ['bw', 'Build a wall', 'KeyZ'], ['bf', 'Build a floor', 'KeyX'], ['br', 'Build a ramp', 'KeyV'], ['bc', 'Build a roof', 'KeyT'],
+  ['edit', 'Edit a piece · confirm the edit', 'KeyG'], ['board', 'Scoreboard (hold)', 'Tab'], ['pause', 'Pause', 'KeyP'], ['mute', 'Mute', 'KeyM'],
+];
+let binds = {};
+{ const saved = store.get('binds', {}); for (const [id, , def] of KEY_ACTIONS) binds[id] = typeof saved[id] === 'string' ? saved[id] : def; }
+let keyMap = new Map(), layoutMap = null;
+function buildKeyMap() {
+  keyMap = new Map();
+  for (const [id, , def] of KEY_ACTIONS) if (binds[id]) keyMap.set(binds[id], def);
+  for (const [, , def] of KEY_ACTIONS) if (!keyMap.has(def)) keyMap.set(def, '');      // a default key moved elsewhere does nothing
+}
+buildKeyMap();
+function keyEv(e) { return { code: keyMap.has(e.code) ? keyMap.get(e.code) : e.code, repeat: e.repeat, target: e.target, preventDefault: () => e.preventDefault() }; }
+try { if (navigator.keyboard && navigator.keyboard.getLayoutMap) navigator.keyboard.getLayoutMap().then(m => { layoutMap = m; renderKeys(); }).catch(() => {}); } catch (e) {}
+const KEY_NAMES = { Space: 'Space', ShiftLeft: 'Left Shift', ShiftRight: 'Right Shift', ControlLeft: 'Left Ctrl', ControlRight: 'Right Ctrl', AltLeft: 'Left Alt', AltRight: 'Right Alt',
+  Tab: 'Tab', CapsLock: 'Caps Lock', Enter: 'Enter', Backspace: 'Backspace', ArrowUp: '↑', ArrowDown: '↓', ArrowLeft: '←', ArrowRight: '→' };
+function keyName(c) {
+  if (!c) return 'None';
+  if (KEY_NAMES[c]) return KEY_NAMES[c];
+  const local = layoutMap && layoutMap.get(c); if (local) return local.toUpperCase();
+  if (c.startsWith('Key')) return c.slice(3); if (c.startsWith('Digit')) return c.slice(5); if (c.startsWith('Numpad')) return 'Num ' + c.slice(6);
+  return c;
+}
+let binding = null;
+function setBind(id, code) {
+  const other = KEY_ACTIONS.find(([o]) => o !== id && binds[o] === code);
+  if (other) binds[other[0]] = binds[id];             // swap, so no key does two things
+  binds[id] = code; store.set('binds', binds); buildKeyMap(); renderKeys(); refreshKeyHelp();
+}
+window.addEventListener('keydown', e => {
+  if (!binding) return;
+  e.preventDefault(); e.stopImmediatePropagation();
+  if (e.code !== 'Escape') setBind(binding, e.code);
+  binding = null; renderKeys();
+}, true);
+function renderKeys() {
+  const box = $('tab_keys'); if (!box) return;
+  box.textContent = '';
+  for (const [id, label] of KEY_ACTIONS) {
+    const row = el('div', 'setrow'), b = el('button', 'keybtn' + (binding === id ? ' wait' : ''), binding === id ? 'Press a key… (Esc cancels)' : keyName(binds[id]));
+    b.addEventListener('click', () => { binding = id; renderKeys(); });
+    row.append(el('label', '', label), b); box.append(row);
+  }
+  box.append(el('div', 'onote', 'Left mouse fires and right mouse aims. J also fires and E also edits, and the arrow keys turn, unless you give those keys another job.'));
+}
+// the key list on the lobby follows your binds
+function refreshKeyHelp() {
+  const k = id => keyName(binds[id]), box = $('keysDesk'); if (!box) return;
+  const rows = [
+    [`${k('forward')} ${k('left')} ${k('back')} ${k('right')}`, `Move · ${k('sprint')} sprints · ${k('jump')} jumps`],
+    ['Mouse · TrackPoint', 'Aim. A two-finger touchpad swipe also aims, and arrow keys turn'],
+    [`Left click · ${k('fire')}`, 'Fire'], [`Right click · ${k('aim')}`, 'Aim down the sight'],
+    [k('crouch'), 'Crouch · press while sprinting to slide'],
+    [`${k('w1')} · ${k('w2')} · ${k('w3')}`, 'Rifle · knife · pump shotgun'],
+    [`${k('build')} · ${k('bw')} ${k('bf')} ${k('br')} ${k('bc')}`, 'Build mode · wall, floor, ramp, roof straight away. Click places'],
+    [k('edit'), 'Edit the piece you aim at: click tiles, press again to confirm'],
+    [`${k('reload')} · ${k('board')} · Esc`, 'Reload · scoreboard · pause'],
+  ];
+  box.textContent = ''; for (const [a, b] of rows) box.append(el('b', '', a), el('span', '', b));
+}
+// ---- the settings screen
+let setReturn = 'sMenu', setTab = 'controls';
+function renderSettings() {
+  for (const tab of ['controls', 'video', 'audio', 'hud']) {
+    const box = $('tab_' + tab); box.textContent = '';
+    for (const [t, k, label, type, o] of SET) {
+      if (t !== tab) continue;
+      const row = el('div', 'setrow'), lab = el('label', '', label), id = 'set_' + k; lab.htmlFor = id;
+      let input;
+      if (type === 'range') {
+        input = el('input'); input.type = 'range'; input.min = o.min; input.max = o.max; input.step = o.step; input.value = settings[k];
+        const out = el('span', 'val', o.fmt(settings[k]));
+        input.addEventListener('input', () => { setSetting(k, +input.value); out.textContent = o.fmt(settings[k]); });
+        const wrap = el('div', 'rng'); wrap.append(input, out); row.append(lab, wrap);
+      } else if (type === 'check') {
+        input = el('input'); input.type = 'checkbox'; input.checked = !!settings[k];
+        input.addEventListener('change', () => setSetting(k, input.checked));
+        const wrap = el('div', 'chk'); wrap.append(input); row.append(lab, wrap);
+      } else {
+        input = el('select'); for (const [v, n] of o.options) { const op = el('option', '', n); op.value = v; input.append(op); } input.value = settings[k];
+        input.addEventListener('change', () => setSetting(k, input.value));
+        row.append(lab, input);
+      }
+      input.id = id; box.append(row);
+    }
+  }
+  renderKeys();
+  for (const b of $('setTabs').children) b.classList.toggle('on', b.dataset.t === setTab);
+  for (const t of ['controls', 'keys', 'video', 'audio', 'hud']) $('tab_' + t).hidden = t !== setTab;
+}
+const PRESETS = { high: { scale: 1, grass: '3', shadows: true }, auto: { scale: 1, grass: '3', shadows: true }, low: { scale: 0.6, grass: '1', shadows: false } };
+function setSetting(k, v) {
+  settings[k] = v; store.set(k, v);
+  if (k === 'gfx' && PRESETS[v]) { Object.assign(settings, PRESETS[v]); for (const [pk, pv] of Object.entries(PRESETS[v])) store.set(pk, pv); renderSettings(); }
+  if ((k === 'scale' || k === 'grass' || k === 'shadows') && settings.gfx !== 'custom') { settings.gfx = 'custom'; store.set('gfx', 'custom'); const s = $('set_gfx'); if (s) s.value = 'custom'; }
+  applySetting(k);
+}
+function applySetting(k) {
+  if (k === 'bright') renderer.toneMappingExposure = 0.9 * settings.bright;
+  else if (k === 'vol' || k === 'mute') sfx.setVol(settings.mute ? 0 : settings.vol);
+  else if (k === 'xcol') $('cross').style.setProperty('--xc', settings.xcol);
+  else if (k === 'xsize') $('cross').style.setProperty('--xs', settings.xsize);
+  else if (k === 'minimap') $('mini').hidden = !settings.minimap;
+  else if (k === 'feed') $('feed').style.visibility = settings.feed ? '' : 'hidden';
+  else if (k === 'fps') $('fpsBox').hidden = !settings.fps;
+  else if (k === 'tips') $('tip').style.visibility = settings.tips ? '' : 'hidden';
+  else if (k === 'gfx' || k === 'scale' || k === 'grass' || k === 'shadows') applyGfx();
+}
+function applyAllSettings() { for (const k of ['bright', 'vol', 'xcol', 'xsize', 'minimap', 'feed', 'fps', 'tips', 'gfx']) applySetting(k); refreshKeyHelp(); }
+function openSettings() {
+  setReturn = state === 'menu' ? 'sMenu' : 'sPause';
+  renderSettings(); show('sSettings');
+}
+function closeSettings() { binding = null; show(setReturn); if (setReturn === 'sMenu') renderLobby(); }
+$('setTabs').addEventListener('click', e => { const t = e.target && e.target.dataset ? e.target.dataset.t : null; if (!t) return; setTab = t; binding = null; renderSettings(); });
+$('setDone').addEventListener('click', closeSettings);
+$('setReset').addEventListener('click', () => {
+  if (setTab === 'keys') { for (const [id, , def] of KEY_ACTIONS) binds[id] = def; store.set('binds', binds); buildKeyMap(); refreshKeyHelp(); }
+  else for (const [t, k] of SET) if (t === setTab) { settings[k] = SETDEF[k]; store.set(k, SETDEF[k]); applySetting(k); }
+  renderSettings();
+});
+$('setBtn').addEventListener('click', openSettings);
+$('setBtn2').addEventListener('click', openSettings);
+// frames per second, when asked for
+let fpsAcc = 0, fpsCnt = 0, fpsLast = performance.now();
+function updateFpsBox() {
+  if (!settings.fps) return;
+  const now = performance.now(); fpsCnt++;
+  if (now - fpsLast > 500) { $('fpsBox').textContent = Math.round(fpsCnt * 1000 / (now - fpsLast)) + ' FPS'; fpsCnt = 0; fpsLast = now; }
+}
+
 /* ================= Player ================= */
 const myCanopy = makeCanopy(PAL[me.color % PAL.length]); myCanopy.visible = false; scene.add(myCanopy);
 function respawnMe() {
@@ -4152,9 +4324,9 @@ function dropMag() { magBody.updateMatrixWorld(true); const c = magBody.clone();
 function lhBlend(a, b, t) { t = clamp(t, 0, 1); t = t * t * (3 - 2 * t); leftHand.position.lerpVectors(a.p, b.p, t); leftHand.quaternion.copy(a.q).slerp(b.q, t); }
 
 function look(dx, dy, sens) {
-  const s = sens * settings.sens * (vm.ads > 0.5 ? 0.62 : 1);
+  const s = sens * settings.sens * (vm.ads > 0.5 ? settings.adsSens : 1);
   player.yaw -= dx * s;
-  const dp = -dy * s;
+  const dp = (settings.invert ? dy : -dy) * s;
   player.pitch = clamp(player.pitch + dp, -1.45, 1.45);
   if (dp < 0) recoilDebt = Math.max(0, recoilDebt + dp);
   vm.swayX = clamp(vm.swayX - dx * 0.00005, -0.012, 0.012); vm.swayY = clamp(vm.swayY + dy * 0.00005, -0.012, 0.012);
@@ -4177,7 +4349,7 @@ function updatePlayer(dt) {
   if (canAct) updateAssist(dt);
   const firing = canAct && !dropping && !buildMode && !editing && (mouseDown || shotQueued || keys.has('KeyF') || keys.has('KeyJ') || touchFire.id !== null || (settings.autofire && autoTarget && (weapon === 1 || (weapon === 3 && autoDist < 20) || autoDist < 2.2)));
   const ads = adsActive() && canAct;
-  const sprinting = canAct && (keys.has('ShiftLeft') || keys.has('ShiftRight') || (touchMove.id !== null && il > 0.95 && iz > 0.7)) && iz > 0 && !ads && !firing && !reload;
+  const sprinting = canAct && (settings.autoSprint || keys.has('ShiftLeft') || keys.has('ShiftRight') || (touchMove.id !== null && il > 0.95 && iz > 0.7)) && iz > 0 && !ads && !firing && !reload;
   // C while sprinting on the ground: slide. C otherwise: toggle crouch. Jumping stands you back up.
   if (cPressed) {
     cPressed = false;
@@ -4276,7 +4448,7 @@ function updatePlayer(dt) {
   vm.swayX *= Math.exp(-dt * 10); vm.swayY *= Math.exp(-dt * 10);
   const hs = Math.hypot(player.vel.x, player.vel.z);
   if (player.onGround && hs > 0.5) bobT += dt * hs * (sprinting ? 1.5 : 1.35);
-  const bobAmt = Math.min(1, hs / 5) * (1 - vm.ads * 0.85) * (player.onGround ? 1 : 0.2);
+  const bobAmt = Math.min(1, hs / 5) * (1 - vm.ads * 0.85) * (player.onGround ? 1 : 0.2) * settings.bob;
   const stride = Math.floor(bobT * 0.5 / Math.PI);
   if (stride !== lastStride) { lastStride = stride; if (player.onGround && hs > 1.5 && me.alive) sfx.step(1.2, stride % 2 ? 0.2 : -0.2); }
   const a = vm.ads, sp = vm.sprint;
@@ -4339,7 +4511,7 @@ function updatePlayer(dt) {
 
   // camera
   if (me.alive) {
-    const sx = (Math.random() - 0.5) * shake * 0.04;
+    const sx = (Math.random() - 0.5) * shake * 0.04 * settings.shake;
     camera.position.set(player.pos.x, player.pos.y + EYE - crouchT * (slideT > 0 ? 0.78 : 0.58) - Math.abs(Math.sin(bobT * 0.5)) * 0.03 * bobAmt - vm.landing * 0.05, player.pos.z);
     camera.rotation.z += crouchT * (slideT > 0 ? 0.045 : 0);
     camera.rotation.set(player.pitch + punch * 0.012 + sx + Math.abs(Math.sin(bobT * 0.5)) * 0.006 * bobAmt, player.yaw + sx + Math.cos(bobT * 0.5) * 0.003 * bobAmt, Math.sin(bobT * 0.5) * 0.006 * bobAmt);
@@ -4354,14 +4526,14 @@ function updatePlayer(dt) {
     if (deathT > 1.4 && BR.phase !== 'end') spectateCam(dt);
   }
   me.yaw = player.yaw; me.pitch = player.pitch;
-  const fov = (camera.aspect < 0.8 ? 84 : 72) - vm.ads * 20 + vm.sprint * 4;
+  const fov = (camera.aspect < 0.8 ? settings.fov + 12 : settings.fov) - vm.ads * 20 + vm.sprint * 4;
   if (Math.abs(camera.fov - fov) > 0.05) { camera.fov = fov; camera.updateProjectionMatrix(); }
   const gfov = 54 - vm.ads * 12;
   if (Math.abs(gunCam.fov - gfov) > 0.05) { gunCam.fov = gfov; gunCam.updateProjectionMatrix(); }
 }
 
 /* ================= Flow ================= */
-function show(id) { for (const s of ['sMenu', 'sPause']) $(s).hidden = s !== id; }
+function show(id) { for (const s of ['sMenu', 'sPause', 'sSettings']) $(s).hidden = s !== id; }
 function setPlayingUI(on) {
   $('hud').hidden = !on;
   $('touch').hidden = !(on && isTouch);
@@ -4442,7 +4614,8 @@ document.addEventListener('pointerlockerror', onLockFail);
 document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); });
 window.addEventListener('blur', () => { keys.clear(); mouseDown = false; adsHeld = false; });
 
-window.addEventListener('keydown', e => {
+window.addEventListener('keydown', e0 => {
+  const e = keyEv(e0);
   if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT')) return;
   if (state === 'playing') {
     if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(e.code)) e.preventDefault();
@@ -4463,13 +4636,15 @@ window.addEventListener('keydown', e => {
     else if (dg && dg < 4) { if (editing) stopEdit(false); switchWeapon(dg); }
     if (e.code === 'Tab') { boardOpen = true; renderBoard(); $('board').hidden = false; }
     if (e.code === 'KeyP' || (e.code === 'Escape' && fallback)) pause();
-    if (e.code === 'KeyM') sfx.toggle();
-  } else if (state === 'paused' && (e.code === 'KeyP' || e.code === 'Escape')) {
+    if (e.code === 'KeyM') { setSetting('mute', !settings.mute); }
+  } else if (state === 'paused' && $('sSettings').hidden && (e.code === 'KeyP' || e.code === 'Escape')) {
     if (fallback || isTouch) resume();
   }
 });
-window.addEventListener('keyup', e => {
+window.addEventListener('keyup', e0 => {
+  const e = keyEv(e0);
   keys.delete(e.code);
+  if (e.code === 'KeyC' && settings.crouchHold === 'hold' && crouchHeld && slideT <= 0) crouchHeld = false;
   if (e.code === 'Tab') { boardOpen = false; $('board').hidden = true; }
 });
 canvas.addEventListener('mousedown', e => {
@@ -4478,7 +4653,7 @@ canvas.addEventListener('mousedown', e => {
   if (!locked && !fallback) { lock(); return; }
   if (inGame && !me.alive) { spectating = pickSpectate(); return; }
   if (e.button === 0) { mouseDown = true; shotQueued = true; }
-  if (e.button === 2) { if (editing) editing.sel.clear(); else adsHeld = true; }
+  if (e.button === 2) { if (editing) editing.sel.clear(); else if (settings.aimHold === 'toggle') adsToggle = !adsToggle; else adsHeld = true; }
 });
 window.addEventListener('mouseup', e => { if (e.button === 0) mouseDown = false; if (e.button === 2) adsHeld = false; });
 window.addEventListener('mousemove', e => {
@@ -4557,6 +4732,7 @@ function renderBoard() {
 let boardT = 0, netUiT = 0;
 let miniT = 0;
 function updateHUD(dt) {
+  updateFpsBox();
   gasHud(); updateMates(); miniT -= dt; if (miniT <= 0) { miniT = 0.08; drawMini(); }
   setText('aliveN', String(aliveCount()));
   setText('hK', String(me.k)); setText('hD', String(me.d));
@@ -4586,8 +4762,10 @@ function updateHUD(dt) {
 /* ================= Loop ================= */
 function applyGfx() {
   const full = Math.min(window.devicePixelRatio || 1, isTouch ? 1.25 : 1.5);
-  if (settings.gfx === 'low') { quality = 3; pixelRatio = Math.min(full, 0.75); grass.count = Math.floor(grass.userData.full / 4); sun.castShadow = false; }
-  else { quality = 0; pixelRatio = full; grass.count = grass.userData.full; sun.castShadow = true; }
+  quality = settings.gfx === 'low' ? 3 : 0;
+  pixelRatio = full * settings.scale;
+  grass.count = Math.floor(grass.userData.full * [0, 0.25, 0.5, 1][settings.grass | 0]);
+  sun.castShadow = !!settings.shadows;
   renderer.setPixelRatio(pixelRatio); resize();
 }
 function resize() {
@@ -4669,7 +4847,7 @@ function frame(now) {
   if (inGame && me.alive && !dropping) { renderer.clearDepth(); renderer.render(gunScene, gunCam); }
 }
 fixTree(scene); fixTree(gunScene);
-if (settings.gfx === 'low') applyGfx();
+applyAllSettings();
 setPlayingUI(false);
 updateNetUI();
 requestAnimationFrame(frame);
