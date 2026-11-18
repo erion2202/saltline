@@ -4044,6 +4044,7 @@ function gasTargetFor(e) {
 const pctF = v => Math.round(v * 100) + '%';
 const SET = [
   ['controls', 'camera', 'Camera', 'select', { def: 'third', options: [['third', 'Third person (over the shoulder)'], ['first', 'First person']] }],
+  ['controls', 'camDist', 'Third-person camera distance', 'range', { min: 1.4, max: 4, step: 0.1, def: 2.3, fmt: v => (+v).toFixed(1) + ' m' }],
   ['controls', 'sens', 'Mouse sensitivity', 'range', { min: 0.1, max: 4, step: 0.05, def: 1, fmt: v => (+v).toFixed(2) }],
   ['controls', 'adsSens', 'Sensitivity while aiming', 'range', { min: 0.2, max: 1.5, step: 0.02, def: 0.62, fmt: pctF }],
   ['controls', 'invert', 'Invert up and down', 'check', { def: false }],
@@ -4228,7 +4229,7 @@ function tpCamera(dt) {
   _tpH.set(player.pos.x, player.pos.y + EYE + 0.12 - crouchT * (slideT > 0 ? 0.78 : 0.58), player.pos.z);   // pivot just above the head
   camera.position.copy(_tpH); camera.updateMatrixWorld();
   _tpR.setFromMatrixColumn(camera.matrixWorld, 0); camera.getWorldDirection(_tpD);
-  const back = 3.0 - ads * 1.6, side = 0.88 + ads * 0.02, up = 0.26 - ads * 0.1;
+  const cd = settings.camDist || 2.3, back = cd * (1 - ads * 0.48), side = 0.62 + cd * 0.06, up = 0.2 + cd * 0.01 - ads * 0.08;
   _tpW.copy(_tpH).addScaledVector(_tpR, side).addScaledVector(_tpD, -back); _tpW.y += up;
   _tpW.sub(_tpH); const len = _tpW.length(); _tpW.normalize();
   // don't let the camera go through what's behind you
