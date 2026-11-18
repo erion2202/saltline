@@ -552,13 +552,43 @@ function normalFrom(c, strength = 2, rx = 1, ry = 1) {
   return texFrom(out, rx, ry);
 }
 function speckle(g, w, h, n, cols, min = 1, max = 3) { for (let i = 0; i < n; i++) { g.fillStyle = cols[Math.floor(TR() * cols.length)]; const s = min + TR() * (max - min); g.fillRect(TR() * w, TR() * h, s, s); } }
-// ground detail: neutral, so the vertex colours decide grass / dirt / rock
+// ground detail seen from above at ~1 cm per pixel: a meadow layer and a soil layer. The terrain blends them with a
+// per-vertex grass mask and tints them, so paths, needle litter, sand and rock all come from the same two textures.
+const wrapDraw = (w, h, x, y, r, fn) => { for (const ox of [-w, 0, w]) for (const oy of [-h, 0, h]) if (x + ox > -r && x + ox < w + r && y + oy > -r && y + oy < h + r) fn(x + ox, y + oy); };
+const blotches = (g, w, h, n, r0, r1, cols, op) => { for (let i = 0; i < n; i++) { const x = TR() * w, y = TR() * h, r = r0 + TR() * (r1 - r0), c = cols[Math.floor(TR() * cols.length)]; wrapDraw(w, h, x, y, r, (px, py) => { const gr = g.createRadialGradient(px, py, 0, px, py, r); gr.addColorStop(0, `rgba(${c},${op})`); gr.addColorStop(1, `rgba(${c},0)`); g.fillStyle = gr; g.fillRect(px - r, py - r, r * 2, r * 2); }); } };
 const groundC = makeCanvas(512, 512, (g, w, h) => {
-  g.fillStyle = '#cfcfc6'; g.fillRect(0, 0, w, h);
-  speckle(g, w, h, 26000, ['rgba(255,255,245,.22)', 'rgba(90,90,70,.2)', 'rgba(160,170,120,.2)', 'rgba(60,60,50,.16)'], 1, 4);
-  for (let i = 0; i < 5000; i++) { const x = TR() * w, y = TR() * h, a = TR() * 6.28, l = 3 + TR() * 7; g.strokeStyle = TR() < 0.5 ? 'rgba(255,255,235,.2)' : 'rgba(70,80,50,.22)'; g.lineWidth = 1; g.beginPath(); g.moveTo(x, y); g.lineTo(x + Math.cos(a) * l, y + Math.sin(a) * l); g.stroke(); }
+  g.fillStyle = '#4f5c34'; g.fillRect(0, 0, w, h);
+  blotches(g, w, h, 150, 20, 70, ['36,46,24', '96,104,56', '84,74,48', '60,74,34'], 0.3);
+  const pal = [[38, 50, 24], [54, 70, 32], [76, 94, 44], [104, 116, 58], [134, 128, 80], [92, 80, 54]];
+  g.lineCap = 'round';
+  for (let pass = 0; pass < 2; pass++) for (let i = 0; i < 15000; i++) {
+    const x = TR() * w, y = TR() * h, a = TR() * 6.28, l = 3 + TR() * 9, c = pal[Math.min(5, Math.floor(TR() * (pass ? 5 : 3) + pass))], k = 0.8 + TR() * 0.4;
+    g.strokeStyle = `rgba(${c[0] * k | 0},${c[1] * k | 0},${c[2] * k | 0},${0.55 + TR() * 0.4})`; g.lineWidth = 1 + TR() * 0.9;
+    wrapDraw(w, h, x, y, l, (px, py) => { g.beginPath(); g.moveTo(px, py); g.lineTo(px + Math.cos(a) * l, py + Math.sin(a) * l); g.stroke(); });
+  }
+  for (let i = 0; i < 60; i++) { const x = TR() * w, y = TR() * h; g.fillStyle = TR() < 0.6 ? 'rgba(232,228,206,0.9)' : 'rgba(222,190,64,0.9)'; g.beginPath(); g.arc(x, y, 1.2 + TR(), 0, 6.28); g.fill(); }
 });
-const groundTex = texFrom(groundC), groundNrm = normalFrom(groundC, 2.2);
+const soilC = makeCanvas(512, 512, (g, w, h) => {
+  g.fillStyle = '#665441'; g.fillRect(0, 0, w, h);
+  blotches(g, w, h, 140, 15, 60, ['52,42,32', '128,110,86', '96,84,66'], 0.35);
+  for (let i = 0; i < 26000; i++) { const k = 0.6 + TR() * 0.9; g.fillStyle = `rgba(${100 * k | 0},${86 * k | 0},${68 * k | 0},0.5)`; g.fillRect(TR() * w, TR() * h, 1 + TR() * 1.5, 1 + TR() * 1.5); }
+  for (let i = 0; i < 420; i++) {
+    const x = TR() * w, y = TR() * h, rx = 1 + Math.pow(TR(), 2.5) * 4.5, ry = rx * (0.6 + TR() * 0.4), a = TR() * 3, k = 0.62 + TR() * 0.45, gr = 112 + TR() * 34;
+    wrapDraw(w, h, x, y, rx + 2, (px, py) => {
+      g.fillStyle = 'rgba(30,24,18,0.5)'; g.beginPath(); g.ellipse(px + 0.8, py + 0.8, rx + 0.6, ry + 0.6, a, 0, 6.28); g.fill();
+      g.fillStyle = `rgb(${gr * k | 0},${gr * k * 0.95 | 0},${gr * k * 0.88 | 0})`; g.beginPath(); g.ellipse(px, py, rx, ry, a, 0, 6.28); g.fill();
+      g.fillStyle = 'rgba(255,250,235,0.12)'; g.beginPath(); g.ellipse(px - rx * 0.3, py - ry * 0.3, rx * 0.45, ry * 0.4, a, 0, 6.28); g.fill();
+    });
+  }
+  g.lineCap = 'round';
+  for (let i = 0; i < 1400; i++) {      // needles and bits of twig
+    const x = TR() * w, y = TR() * h, a = TR() * 6.28, l = 4 + TR() * 10, rust = TR() < 0.5;
+    g.strokeStyle = rust ? `rgba(${120 + TR() * 40 | 0},${76 + TR() * 20 | 0},${42},0.8)` : 'rgba(58,42,30,0.75)'; g.lineWidth = 0.8 + TR() * 0.6;
+    wrapDraw(w, h, x, y, l, (px, py) => { g.beginPath(); g.moveTo(px, py); g.lineTo(px + Math.cos(a) * l, py + Math.sin(a) * l); g.stroke(); });
+  }
+});
+const groundTex = texFrom(groundC), soilTex = texFrom(soilC), groundNrm = normalFrom(soilC, 2.0);
+soilTex.encoding = THREE.sRGBEncoding;
 const grassBladeTex = texFrom(makeCanvas(256, 256, (g, w, h) => {
   for (let i = 0; i < 95; i++) {
     const x = 8 + TR() * (w - 16), ht = h * (0.5 + TR() * 0.5), lean = (TR() - 0.5) * 74, wd = 3 + TR() * 4.5;
@@ -640,10 +670,14 @@ const barkC = makeCanvas(128, 256, (g, w, h) => {
 });
 const barkTex = texFrom(barkC, 2, 2), barkNrm = normalFrom(barkC, 3, 2, 2);
 const rockC = makeCanvas(256, 256, (g, w, h) => {
-  g.fillStyle = '#8b8880'; g.fillRect(0, 0, w, h);
-  for (let i = 0; i < 90; i++) { g.fillStyle = `rgba(${TR() < 0.5 ? '60,58,54' : '185,180,170'},${0.08 + TR() * 0.1})`; g.beginPath(); g.ellipse(TR() * w, TR() * h, 10 + TR() * 40, 8 + TR() * 26, TR() * 3, 0, 6.28); g.fill(); }
-  speckle(g, w, h, 9000, ['rgba(40,40,38,.3)', 'rgba(220,215,205,.25)', 'rgba(110,120,80,.2)'], 1, 3);
-  for (let i = 0; i < 26; i++) { let x = TR() * w, y = TR() * h; g.strokeStyle = 'rgba(30,28,26,.55)'; g.lineWidth = 1 + TR(); g.beginPath(); g.moveTo(x, y); for (let k = 0; k < 6; k++) { x += (TR() - 0.5) * 40; y += (TR() - 0.5) * 40; g.lineTo(x, y); } g.stroke(); }
+  g.fillStyle = '#76736c'; g.fillRect(0, 0, w, h);
+  blotches(g, w, h, 60, 15, 50, ['52,50,46', '150,146,138', '110,100,92'], 0.3);
+  for (let i = 0; i < 14000; i++) { const t = TR(); g.fillStyle = t < 0.35 ? 'rgba(28,28,28,0.55)' : t < 0.7 ? 'rgba(210,206,198,0.45)' : t < 0.85 ? 'rgba(170,140,124,0.4)' : 'rgba(90,90,86,0.5)'; g.fillRect(TR() * w, TR() * h, 1 + TR() * 2, 1 + TR() * 2); }
+  for (let i = 0; i < 45; i++) {          // crusty lichen rosettes, grey-green and a few orange
+    const x = TR() * w, y = TR() * h, r = 3 + TR() * 12, orange = TR() < 0.15;
+    wrapDraw(w, h, x, y, r, (px, py) => { for (let k = 0; k < 14; k++) { const a = TR() * 6.28, d = TR() * r; g.fillStyle = orange ? 'rgba(196,128,52,0.45)' : 'rgba(176,184,150,0.4)'; g.beginPath(); g.arc(px + Math.cos(a) * d, py + Math.sin(a) * d, 1 + TR() * r * 0.35, 0, 6.28); g.fill(); } });
+  }
+  for (let i = 0; i < 10; i++) { let x = TR() * w, y = TR() * h; g.strokeStyle = 'rgba(30,28,26,.45)'; g.lineWidth = 0.8 + TR() * 0.6; g.beginPath(); g.moveTo(x, y); for (let k = 0; k < 5; k++) { x += (TR() - 0.5) * 30; y += (TR() - 0.5) * 30; g.lineTo(x, y); } g.stroke(); }
 });
 const rockTex = texFrom(rockC, 2, 2), rockNrm = normalFrom(rockC, 3.5, 2, 2);
 const sidingC = makeCanvas(256, 256, (g, w, h) => {
@@ -746,48 +780,99 @@ function grassiness(x, z, h, ny) {
   const n2 = fbm(x * 0.17 - 7, z * 0.17 + 31);
   return sstep(0.8, 0.92, ny) * sstep(WATER_Y + 0.5, WATER_Y + 1.2, h) * sstep(0.9, 1.7, pathDist(x, z));
 }
-const terrainMat = new THREE.MeshStandardMaterial({ vertexColors: true, map: groundTex, normalMap: groundNrm, normalScale: new THREE.Vector2(0.9, 0.9), roughness: 0.96, metalness: 0, envMapIntensity: 0.25 });
-terrainMat.color.setRGB(1.15, 1.15, 1.15); terrainMat._lin = true; groundTex.encoding = THREE.sRGBEncoding;
+// per-vertex ground tint (multiplies the textures) and grass mask (1 = meadow, 0 = bare soil, litter, sand or rock)
+const TREE_GRID = new Map();          // spruce crowns, filled once the trees are placed: no grass under them, just needle litter
+function underSpruce(x, z) {
+  let best = 0; const cx = Math.floor(x / 8), cz = Math.floor(z / 8);
+  for (let i = -1; i <= 1; i++) for (let k = -1; k <= 1; k++) { const L = TREE_GRID.get((cx + i) * 1000 + cz + k); if (L) for (const c of L) { const d = Math.hypot(x - c.x, z - c.z) / c.lr; if (d < 1.2) best = Math.max(best, sstep(1.2, 0.6, d)); } }
+  return best;
+}
+const _t1 = new THREE.Color(), _t2 = new THREE.Color();
+function groundPaint(x, z, h, ny, out) {
+  const n = fbm(x * 0.06 + 40, z * 0.06 - 12), n2 = fbm(x * 0.17 - 7, z * 0.17 + 31), n3 = fbm(x * 0.55 + 3, z * 0.55 - 8);
+  out.setRGB(1, 1, 1).lerp(_t1.setRGB(1.22, 1.1, 0.74), sstep(0.46, 0.74, n)).lerp(_t1.setRGB(0.74, 0.84, 0.7), sstep(0.5, 0.28, n2) * 0.7);
+  const inside = Math.abs(x) < 140 && Math.abs(z) < 140;
+  const path = inside ? sstep(1.8, 0.75, pathDist(x, z)) : 0;
+  const bare = sstep(0.76, 0.88, n2 + (n3 - 0.5) * 0.35) * 0.9;
+  const rock = sstep(0.88, 0.74, ny);
+  const sand = sstep(WATER_Y + 1.1, WATER_Y + 0.3, h), mud = sstep(WATER_Y + 0.1, WATER_Y - 0.8, h);
+  const litter = inside ? underSpruce(x, z) : 0;
+  const gm = (1 - path) * (1 - bare) * (1 - rock) * (1 - sand) * (1 - litter * 0.97);
+  _t2.setRGB(1, 1, 1).lerp(_t1.setRGB(0.74, 0.6, 0.48), litter).lerp(_t1.setRGB(1.05, 1.05, 1.12), rock).lerp(_t1.setRGB(1.5, 1.38, 1.12), sand).lerp(_t1.setRGB(0.58, 0.54, 0.5), mud);
+  out.lerp(_t2, 1 - gm);
+  return gm;
+}
+const TG = { N: 12 * 24 + 1, step: 540 / (12 * 24), min: -270 };
+const TGRID = new Float32Array(TG.N * TG.N);     // the terrain mesh's own vertex heights
+// height of the triangulated terrain surface (what you actually see), not of the smooth function
+function meshH(x, z) {
+  const fx = (x - TG.min) / TG.step, fz = (z - TG.min) / TG.step;
+  const i = clamp(Math.floor(fx), 0, TG.N - 2), k = clamp(Math.floor(fz), 0, TG.N - 2), u = fx - i, v = fz - k;
+  const ha = TGRID[k * TG.N + i], hb = TGRID[k * TG.N + i + 1], hc = TGRID[(k + 1) * TG.N + i], hd = TGRID[(k + 1) * TG.N + i + 1];
+  return u + v <= 1 ? ha + (hb - ha) * u + (hc - ha) * v : hd + (hc - hd) * (1 - u) + (hb - hd) * (1 - v);
+}
+const terrainMat = new THREE.MeshStandardMaterial({ vertexColors: true, map: groundTex, normalMap: groundNrm, normalScale: new THREE.Vector2(0.8, 0.8), roughness: 0.97, metalness: 0, envMapIntensity: 0.22 });
+terrainMat._lin = true; groundTex.encoding = THREE.sRGBEncoding;
+terrainMat.onBeforeCompile = sh => {
+  sh.uniforms.soilMap = { value: soilTex };
+  sh.vertexShader = 'attribute float gmask;\nvarying float vGm;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nvGm = gmask;');
+  sh.fragmentShader = 'uniform sampler2D soilMap;\nvarying float vGm;\n' + sh.fragmentShader.replace('#include <map_fragment>', `
+    vec4 tGrass = mapTexelToLinear( texture2D( map, vUv ) );
+    vec4 tGrass2 = mapTexelToLinear( texture2D( map, vUv * 0.21 + vec2( 0.37, 0.61 ) ) );
+    tGrass.rgb = mix( tGrass.rgb, tGrass2.rgb, 0.4 );                       // a second, larger-scale lookup hides the tiling
+    vec4 tSoil = mapTexelToLinear( texture2D( soilMap, vUv * 0.85 + vec2( 0.13, 0.29 ) ) );
+    float gmN = clamp( ( vGm - 0.5 ) * 3.2 + ( tGrass.g - tSoil.g ) * 6.0, 0.0, 1.0 );   // ragged edge where grass meets soil
+    diffuseColor *= mix( tSoil, tGrass, gmN );`);
+};
 const terrainChunks = [];
 {
   const SIZE = 540, CH = 12, SEG = 24, cs = SIZE / CH, step = cs / SEG;
   for (let cx = 0; cx < CH; cx++) for (let cz = 0; cz < CH; cz++) {
-    const pos = [], nrm = [], col = [], uv = [], idx = [];
+    const pos = [], nrm = [], col = [], uv = [], idx = [], gmk = [];
     const x0 = -SIZE / 2 + cx * cs, z0 = -SIZE / 2 + cz * cs;
     for (let k = 0; k <= SEG; k++) for (let i = 0; i <= SEG; i++) {
       const x = x0 + i * step, z = z0 + k * step, h = terrainH(x, z), n = terrainNormal(x, z);
       pos.push(x, h, z); nrm.push(n.x, n.y, n.z); uv.push(x / 5, z / 5);
-      const c = groundColor(x, z, h, n.y); col.push(c.r, c.g, c.b);
+      col.push(1, 1, 1); gmk.push(1); TGRID[(cz * SEG + k) * TG.N + cx * SEG + i] = h;
     }
     for (let k = 0; k < SEG; k++) for (let i = 0; i < SEG; i++) { const a = k * (SEG + 1) + i, b = a + 1, c = a + SEG + 1, d = c + 1; idx.push(a, c, b, b, c, d); }
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
     g.setAttribute('normal', new THREE.Float32BufferAttribute(nrm, 3));
     g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
-    g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+    g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setAttribute('gmask', new THREE.Float32BufferAttribute(gmk, 1));
     g.setIndex(idx); g.computeBoundingSphere(); g.computeBoundingBox();
     const m = new THREE.Mesh(g, terrainMat);
     m.receiveShadow = true; m.userData.surface = 'grass';
     scene.add(m); terrainChunks.push(m);
   }
 }
-// distant mountain range, faded by the haze
+// distant mountain range: dark spruce forest up to a ragged treeline, alpine heath and scree above, bare rock on the
+// steep faces and snow lying on the gentler slopes near the tops. Faded by the haze.
 {
-  const A = 220, RN = 16, pos = [], col = [], idx = [], c = new THREE.Color();
-  const forest = lin(0x30482a), stone = lin(0x6d6a66), snowC = lin(0xe8ecf2);
+  const A = 560, RN = 46, pos = [], idx = [];
   for (let j = 0; j <= RN; j++) for (let i = 0; i <= A; i++) {
-    const a = i / A * Math.PI * 2, r = 268 + j / RN * 520, x = Math.cos(a) * r, z = Math.sin(a) * r;
-    const ridge = 1 - Math.abs(fbm(x * 0.006 + 9, z * 0.006 - 4) * 2 - 1), m = (Math.pow(ridge, 1.6) * 190 + fbm(x * 0.02, z * 0.02) * 28) * sstep(330, 560, r) * (1 - sstep(700, 788, r) * 0.7);
-    const h = terrainH(x, z) - 1.2 * (1 - sstep(382, 400, r)) + m;
-    pos.push(x, h, z);
-    c.copy(forest).lerp(stone, sstep(70, 120, h + fbm(x * 0.03, z * 0.03) * 30)).lerp(snowC, sstep(150, 185, h + fbm(x * 0.05, z * 0.05) * 20));
-    col.push(c.r, c.g, c.b);
+    const a = i / A * Math.PI * 2, r = 268 + Math.pow(j / RN, 1.3) * 520, x = Math.cos(a) * r, z = Math.sin(a) * r;
+    const ridge = 1 - Math.abs(fbm(x * 0.006 + 9, z * 0.006 - 4) * 2 - 1), m = (Math.pow(ridge, 1.6) * 190 + fbm(x * 0.02, z * 0.02) * 28 + fbm(x * 0.07 + 3, z * 0.07) * 9) * sstep(330, 560, r) * (1 - sstep(700, 788, r) * 0.7);
+    pos.push(x, terrainH(x, z) - 1.2 * (1 - sstep(382, 400, r)) + m, z);
   }
   for (let j = 0; j < RN; j++) for (let i = 0; i < A; i++) { const a = j * (A + 1) + i, b = a + 1, cc = a + A + 1, d = cc + 1; idx.push(a, b, cc, b, d, cc); }
   const g = new THREE.BufferGeometry();
-  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
-  g.setIndex(idx); g.computeVertexNormals();
-  const mm = new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide }); mm._lin = true;
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals();
+  const nr = g.attributes.normal, col = [], c = new THREE.Color();
+  const forest = lin(0x1f2f1c), forest2 = lin(0x2c3d22), heath = lin(0x5a5a38), rockC = lin(0x5f5b55), scree = lin(0x8a857c), snowC = lin(0xeef1f5);
+  for (let v = 0; v < pos.length / 3; v++) {
+    const x = pos[v * 3], h = pos[v * 3 + 1], z = pos[v * 3 + 2], ny = nr.getY(v), n1 = fbm(x * 0.03, z * 0.03), n2 = fbm(x * 0.11 + 7, z * 0.11 - 3);
+    c.copy(forest).lerp(forest2, n2);
+    const tree = sstep(95, 70, h + (n1 - 0.5) * 40);
+    c.lerp(heath, 1 - tree);
+    c.lerp(rockC, sstep(0.8, 0.6, ny) * (0.55 + 0.45 * (1 - tree)));
+    c.lerp(scree, sstep(0.7, 0.85, n2) * (1 - tree) * 0.6);
+    c.lerp(snowC, sstep(140, 175, h + (n1 - 0.5) * 50) * sstep(0.45, 0.68, ny + (n2 - 0.5) * 0.2));
+    col.push(c.r, c.g, c.b);
+  }
+  g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+  const mm = new THREE.MeshLambertMaterial({ vertexColors: true }); mm._lin = true;
   const m = new THREE.Mesh(g, mm); m.frustumCulled = false; scene.add(m);
 }
 // water: animated ripples, sky reflection by viewing angle, sun glitter, see-through shallows, shoreline foam
@@ -932,18 +1017,27 @@ for (let i = 0; i < 40; i++) {
   }
 }
 // --- rocks: lumpy boulders with a stone texture
+const ROCK_CUTS = Array.from({ length: 6 }, (_, i) => [new V3(Math.cos(i * 1.9 + 0.3), i === 0 ? 1.4 : (TR() - 0.2) * 0.8, Math.sin(i * 1.9 + 0.3)).normalize(), 0.58 + TR() * 0.2]);
 const rockGeo = (() => {
-  const g = new THREE.SphereGeometry(1, 18, 12), p = g.attributes.position, v = new V3();
+  const g = new THREE.SphereGeometry(1, 24, 16), p = g.attributes.position, v = new V3();
   for (let i = 0; i < p.count; i++) {
     v.fromBufferAttribute(p, i);
     const n = fbm(v.x * 1.3 + v.y * 0.7 + 3, v.z * 1.3 - v.y * 0.9 + 8) * 0.55 + fbm(v.x * 3.1 + 20, v.z * 3.1 + v.y * 2.3) * 0.2;
-    v.multiplyScalar(0.72 + n); v.y *= 0.8; p.setXYZ(i, v.x, v.y, v.z);
+    v.multiplyScalar(0.72 + n); v.y *= 0.8;
+    for (const [cn, cd] of ROCK_CUTS) { const k = v.dot(cn); if (k > cd) v.addScaledVector(cn, cd - k); }      // fractured flat faces
+    p.setXYZ(i, v.x, v.y, v.z);
   }
   // close the seam of the sphere so normals stay smooth there
-  for (let j = 0; j <= 12; j++) { const a = j * 19, b = a + 18; p.setXYZ(b, p.getX(a), p.getY(a), p.getZ(a)); }
-  g.computeVertexNormals(); return g;
+  for (let j = 0; j <= 16; j++) { const a = j * 25, b = a + 24; p.setXYZ(b, p.getX(a), p.getY(a), p.getZ(a)); }
+  g.computeVertexNormals();
+  // moss and dirt: green on the tops, darker and earthy toward the ground
+  const nn = g.attributes.normal, cc = [];
+  for (let i = 0; i < p.count; i++) { const ny = nn.getY(i), y = p.getY(i), m = sstep(0.6, 0.92, ny + (fbm(p.getX(i) * 2 + 4, p.getZ(i) * 2) - 0.5) * 0.5) * 0.7, d = sstep(-0.1, -0.6, y);
+    cc.push(1.12 - m * 0.4 - d * 0.3, 1.12 - m * 0.2 - d * 0.32, 1.1 - m * 0.55 - d * 0.38); }
+  g.setAttribute('color', new THREE.Float32BufferAttribute(cc, 3));
+  return g;
 })();
-const rockMat = new THREE.MeshStandardMaterial({ map: rockTex, normalMap: rockNrm, roughness: 0.93, envMapIntensity: 0.4 });
+const rockMat = new THREE.MeshStandardMaterial({ map: rockTex, normalMap: rockNrm, vertexColors: true, roughness: 0.9, envMapIntensity: 0.4 });
 const rocks = new THREE.InstancedMesh(rockGeo, rockMat, 90);
 rocks.castShadow = rocks.receiveShadow = true; rocks.userData.surface = 'rock';
 {
@@ -954,204 +1048,354 @@ rocks.castShadow = rocks.receiveShadow = true; rocks.userData.surface = 'rock';
     const x = (R() - 0.5) * 120 * MS, z = (R() - 0.5) * 120 * MS;
     if (!freeSpot(x, z, sc * 1.2, 70 * MS)) continue;
     const base = terrainH(x, z);
-    p.set(x, base + sc * 0.2, z); e.set(R() * 0.4, R() * 6, R() * 0.4); s.set(sc * 1.25, sc * 1.0, sc * 1.1);
+    p.set(x, base + sc * 0.05, z); e.set(R() * 0.4, R() * 6, R() * 0.4); s.set(sc * 1.25, sc * 1.0, sc * 1.1);
     rocks.setMatrixAt(n++, m4.compose(p, q.setFromEuler(e), s));
     if (Math.hypot(x, z) < BOUND + 2) colliders.push({ t: 'c', x, z, r: sc * 1.0, base, top: base + sc * 0.9 });
   }
   rocks.count = n;
 }
 scene.add(rocks);
-// --- trees: six species. Foliage is built from rounded leaf clumps ("puffs"), each shaded like a ball,
-//     so the canopy reads as dense, fluffy masses that are bright on top and dark underneath.
+// --- trees: a Norwegian valley. Norway spruce, Scots pine, silver birch and rowan, grown branch by branch at
+//     their real size (spruce up to ~20 m). Every needle spray and leaf twig is painted into one texture atlas,
+//     so each species is a single draw call.
 const TREES = 460;
 const up3 = new V3(0, 1, 0);
-const puffTex = texFrom(makeCanvas(512, 512, (g, w, h) => {
-  const leaf = (x, y, s, rot, col) => { g.save(); g.translate(x, y); g.rotate(rot); g.fillStyle = col; g.beginPath(); g.moveTo(-s, 0); g.quadraticCurveTo(0, -s * 0.6, s, 0); g.quadraticCurveTo(0, s * 0.6, -s, 0); g.fill(); g.restore(); };
-  const layer = (n, rad, s0, s1, rgb, jit, bias) => { for (let i = 0; i < n; i++) { const a = TR() * 6.28, d = Math.pow(TR(), 0.55) * rad * w, x = w / 2 + Math.cos(a) * d, y = h / 2 + Math.sin(a) * d, k = (1 - jit + TR() * jit * 2) * (1 + bias * (0.5 - y / h)); leaf(x, y, s0 + TR() * (s1 - s0), TR() * 6.28, `rgb(${rgb[0] * k | 0},${rgb[1] * k | 0},${rgb[2] * k | 0})`); } };
-  layer(1500, 0.405, 9, 15, [34, 84, 16], 0.2, 0.2);      // deep shade, covers the whole middle
-  layer(2400, 0.44, 6, 10, [62, 128, 22], 0.22, 0.35);    // body of the foliage
-  layer(1900, 0.462, 4, 7, [98, 168, 34], 0.22, 0.5);     // lit leaves out to a ragged, feathery edge
-  layer(520, 0.45, 3, 5, [150, 206, 66], 0.18, 0.6);      // sun glints, mostly toward the top
-}));
-puffTex.wrapS = puffTex.wrapT = THREE.ClampToEdgeWrapping;
-const frondTex = texFrom(makeCanvas(256, 512, (g, w, h) => {
-  g.strokeStyle = '#4a3a22'; g.lineWidth = 5; g.beginPath(); g.moveTo(w / 2, h); g.lineTo(w / 2, 50); g.stroke();
-  for (let pass = 0; pass < 3; pass++) for (let y = h - 6; y > 10; y -= 3) {
-    const t = 1 - y / h, reach = (w / 2 - 5) * (0.5 + 0.5 * Math.sin(Math.PI * Math.min(1, 0.12 + t * 0.95))) * (1 - t * 0.35);
-    for (const s of [-1, 1]) {
-      // a side twig carrying its own row of short needles
-      const k = (0.55 + pass * 0.24) * (0.8 + TR() * 0.4), len = reach * (0.4 + TR() * 0.6), ex = w / 2 + s * len, ey = y - 22 - TR() * 22;
-      g.strokeStyle = `rgb(${40 * k | 0},${112 * k | 0},${28 * k | 0})`; g.lineWidth = 2.2 - pass * 0.5;
-      g.beginPath(); g.moveTo(w / 2, y); g.quadraticCurveTo(w / 2 + s * len * 0.6, y - 8, ex, ey); g.stroke();
-      g.lineWidth = 1.1;
-      for (let q = 0.25; q < 1; q += 0.16) {
-        const nx = w / 2 + (ex - w / 2) * q, ny = y + (ey - y) * q, kk = k * (0.9 + TR() * 0.4);
-        g.strokeStyle = `rgb(${50 * kk | 0},${132 * kk | 0},${34 * kk | 0})`;
-        g.beginPath(); g.moveTo(nx, ny); g.lineTo(nx + s * (3 + TR() * 5), ny - 7 - TR() * 6); g.stroke();
-        g.beginPath(); g.moveTo(nx, ny); g.lineTo(nx - s * (1 + TR() * 4), ny - 8 - TR() * 6); g.stroke();
+const FA = 1024;                                    // foliage atlas size
+const FR = {                                        // atlas regions [x, y, w, h] in canvas pixels
+  spray: [0, 0, 1024, 256], tuft: [0, 256, 384, 384], core: [384, 256, 192, 384], birch: [576, 256, 448, 384],
+  rowan: [0, 640, 384, 384], bush: [384, 640, 320, 384], dead: [704, 640, 320, 384],
+};
+const uvOf = k => { const [x, y, w, h] = FR[k]; return [x / FA + 0.002, 1 - (y + h) / FA + 0.002, (x + w) / FA - 0.002, 1 - y / FA - 0.002]; };
+const foliageC = makeCanvas(FA, FA, (g, W, H) => {
+  g.lineCap = 'round';
+  const rgb = (c, k) => `rgb(${Math.min(255, c[0] * k) | 0},${Math.min(255, c[1] * k) | 0},${Math.min(255, c[2] * k) | 0})`;
+  const clip = k => { const [x, y, w, h] = FR[k]; g.save(); g.beginPath(); g.rect(x, y, w, h); g.clip(); g.translate(x, y); return [w, h]; };
+  // needles along a twig, both sides, swept toward the tip; one path per call keeps this fast
+  const needles = (x0, y0, x1, y1, len, gap, ang, col, width) => {
+    const L = Math.hypot(x1 - x0, y1 - y0) || 1, a = Math.atan2(y1 - y0, x1 - x0);
+    g.strokeStyle = col; g.lineWidth = width; g.beginPath();
+    for (let d = 0; d < L; d += gap) {
+      const x = x0 + (x1 - x0) * d / L, y = y0 + (y1 - y0) * d / L, l = len * (0.75 + TR() * 0.5) * (1 - 0.35 * d / L);
+      for (const s of [-1, 1]) { const b = a + s * (ang + (TR() - 0.5) * 0.4); g.moveTo(x, y); g.lineTo(x + Math.cos(b) * l, y + Math.sin(b) * l); }
+    }
+    g.stroke();
+  };
+  // ---- Norway spruce bough seen from above: a flat, feathered spray. Trunk end on the left, tip on the right.
+  {
+    const [w, h] = clip('spray'), cy = h / 2;
+    const passes = [[[20, 40, 26], 2.4, 1.0], [[33, 60, 38], 1.8, 0.95], [[58, 88, 52], 1.3, 0.75]];
+    passes.forEach(([c, lw, reachK], pass) => {
+      for (let x = 30; x < w - 24; x += 7 + TR() * 5) {
+        const t = x / w, side = (Math.floor(x / 9) % 2 ? 1 : -1) * (TR() < 0.85 ? 1 : -1);
+        const reach = (cy - 10) * (0.25 + 0.75 * Math.sin(Math.PI * Math.min(1, 0.12 + t * 0.95))) * (0.6 + TR() * 0.45) * reachK;
+        const ex = x + reach * (0.7 + TR() * 0.4), ey = cy + side * reach * (0.85 + TR() * 0.2);
+        const k = (0.85 + TR() * 0.3) * (pass === 2 ? 0.9 + t * 0.35 : 1);
+        if (pass === 0) { g.strokeStyle = 'rgb(52,38,26)'; g.lineWidth = 1.6; g.beginPath(); g.moveTo(x, cy); g.lineTo(ex, ey); g.stroke(); }
+        const s0 = pass === 2 ? 0.45 : 0;      // fresh light-green growth only on the outer half
+        needles(x + (ex - x) * s0, cy + (ey - cy) * s0, ex, ey, 9 + pass * 1.5, 2.3, 0.85, rgb(c, k), lw);
+        if (TR() < 0.6) { const mx = x + (ex - x) * 0.5, my = cy + (ey - cy) * 0.5; needles(mx, my, mx + (ex - x) * 0.45, my + side * reach * 0.15 * -1, 8 + pass, 2.4, 0.85, rgb(c, k * 0.95), lw); }
+      }
+      if (pass === 0) { g.strokeStyle = 'rgb(58,42,30)'; g.lineWidth = 3; g.beginPath(); g.moveTo(4, cy); g.quadraticCurveTo(w * 0.5, cy - 6, w - 10, cy + 2); g.stroke(); }
+      needles(12, cy, w - 12, cy, 10, 2.6, 1.0, rgb(c, 0.95), lw);
+    });
+    g.restore();
+  }
+  // ---- Scots pine tuft: long paired needles bursting from shoot tips, blue-green
+  // a soft, solid core under a needle/leaf drawing: keeps foliage from dissolving into nothing when seen from afar
+  const core = (cx, cy, rx, ry, c, n) => { for (let i = 0; i < n; i++) { const a = TR() * 6.28, d = Math.sqrt(TR()), x = cx + Math.cos(a) * rx * d, y = cy + Math.sin(a) * ry * d, r = (rx + ry) * (0.08 + TR() * 0.1); g.fillStyle = rgb(c, 0.75 + TR() * 0.4); g.beginPath(); g.ellipse(x, y, r, r * (0.6 + TR() * 0.5), TR() * 3, 0, 6.28); g.fill(); } };
+  {
+    const [w, h] = clip('tuft');
+    core(w / 2, h / 2, w * 0.3, h * 0.3, [26, 40, 32], 70);
+    for (let pass = 0; pass < 3; pass++) {
+      const c = [[30, 46, 38], [52, 74, 60], [84, 108, 86]][pass];
+      for (let i = 0; i < 14; i++) {
+        const a = TR() * 6.28, r0 = TR() * w * 0.12, cx = w / 2 + Math.cos(a) * r0, cy = h / 2 + Math.sin(a) * r0;
+        const b = a + (TR() - 0.5) * 1.2, L = w * (0.18 + TR() * 0.2), ex = cx + Math.cos(b) * L, ey = cy + Math.sin(b) * L;
+        if (pass === 0) { g.strokeStyle = 'rgb(96,62,40)'; g.lineWidth = 3; g.beginPath(); g.moveTo(cx, cy); g.lineTo(ex, ey); g.stroke(); }
+        needles(cx, cy, ex, ey, 34 + pass * 6, 3.2 - pass * 0.4, 0.5, rgb(c, 0.85 + TR() * 0.3), 1.7 - pass * 0.3);
+        // the brush at the shoot tip
+        g.strokeStyle = rgb(c, 1.05); g.lineWidth = 1.5 - pass * 0.25; g.beginPath();
+        for (let k = 0; k < 22; k++) { const d = b + (TR() - 0.5) * 2.2, l = 26 + TR() * 22; g.moveTo(ex, ey); g.lineTo(ex + Math.cos(d) * l, ey + Math.sin(d) * l); }
+        g.stroke();
       }
     }
+    g.restore();
   }
-}));
-frondTex.wrapS = frondTex.wrapT = THREE.ClampToEdgeWrapping;
-const coreTex = texFrom(makeCanvas(128, 256, (g, w, h) => {
-  // dense cone silhouette that fills the middle of a conifer so you never see through it
-  for (let i = 0; i < 1500; i++) {
-    const t = Math.pow(TR(), 0.8), y = 8 + t * (h - 30), half = 4 + t * (w / 2 - 6), x = w / 2 + (TR() - 0.5) * 2 * half, k = 0.5 + TR() * 0.45;
-    g.strokeStyle = `rgb(${44 * k | 0},${108 * k | 0},${30 * k | 0})`; g.lineWidth = 2;
-    g.beginPath(); g.moveTo(x, y); g.lineTo(x + (x - w / 2) * 0.12, y + 7 + TR() * 6); g.stroke();
-  }
-}));
-coreTex.wrapS = coreTex.wrapT = THREE.ClampToEdgeWrapping;
-const boughTex = texFrom(makeCanvas(512, 512, (g, w, h) => {
-  // a hanging spray of twigs thick with short needles; dark where it tucks under the bough above, lighter at the tips
-  for (let pass = 0; pass < 4; pass++) for (let i = 0; i < 150; i++) {
-    const a = (TR() - 0.5) * 2.2, len = (0.3 + TR() * 0.36) * h * (1 - Math.abs(a) * 0.3), k = (0.5 + pass * 0.2) * (0.85 + TR() * 0.3);
-    const x0 = w / 2 + (TR() - 0.5) * 70, y0 = 66 + TR() * 70, x1 = x0 + Math.sin(a) * len * 0.8, y1 = y0 + Math.cos(a) * len;
-    const cx = x0 + Math.sin(a) * len * 0.6, cy = y0 + Math.cos(a) * len * 0.3;
-    g.strokeStyle = `rgb(${46 * k | 0},${96 * k | 0},${30 * k | 0})`; g.lineWidth = 2.2;
-    g.beginPath(); g.moveTo(x0, y0); g.quadraticCurveTo(cx, cy, x1, y1); g.stroke();
-    g.lineWidth = 1.3;
-    for (let q = 0.12; q < 1.04; q += 0.035) {      // many short needles, angled along the twig
-      const m = 1 - q, nx = m * m * x0 + 2 * m * q * cx + q * q * x1, ny = m * m * y0 + 2 * m * q * cy + q * q * y1, kk = k * (0.8 + q * 0.6) * (0.85 + TR() * 0.3);
-      g.strokeStyle = `rgb(${52 * kk | 0},${134 * kk | 0},${38 * kk | 0})`;
-      const nl = 7 + TR() * 6, da = a + (TR() - 0.5) * 0.5;
-      for (const s of [-1, 1]) { g.beginPath(); g.moveTo(nx, ny); g.lineTo(nx + Math.sin(da + s * 0.9) * nl, ny + Math.cos(da + s * 0.9) * nl); g.stroke(); }
+  // ---- dark inner cone of a spruce: fills the middle so the crown never looks hollow
+  {
+    const [w, h] = clip('core');
+    for (let i = 0; i < 2600; i++) {
+      const t = Math.pow(TR(), 0.75), y = 6 + t * (h - 14), half = 3 + t * (w / 2 - 6), x = w / 2 + (TR() - 0.5) * 2 * half, k = 0.55 + TR() * 0.5;
+      g.strokeStyle = rgb([20, 36, 24], k); g.lineWidth = 2;
+      g.beginPath(); g.moveTo(x, y); g.lineTo(x + (x - w / 2) * 0.15, y + 6 + TR() * 6); g.stroke();
     }
+    g.restore();
   }
-}));
-boughTex.wrapS = boughTex.wrapT = THREE.ClampToEdgeWrapping;
-const foliageMat = (map, alpha, wind) => addWind(new THREE.MeshLambertMaterial({ map, alphaTest: alpha, vertexColors: true, emissive: 0x0b1505 }), wind, 0.14);
-const BILL_PROJECT = `
-  vec4 mvPosition = vec4( transformed, 1.0 );
-  float bsc = 1.0;
-  #ifdef USE_INSTANCING
-    mvPosition = instanceMatrix * mvPosition;
-    bsc = length( instanceMatrix[0].xyz );
-  #endif
-  mvPosition = modelViewMatrix * mvPosition;
-  float bca = cos( offs.z ), bsa = sin( offs.z );
-  mvPosition.xy += vec2( offs.x * bca - offs.y * bsa, offs.x * bsa + offs.y * bca ) * bsc;
-  gl_Position = projectionMatrix * mvPosition;`;
-// turns each quad to face the viewer (or the sun, when drawing shadows) around its own centre
-function billboard(mat) {
-  const prev = mat.onBeforeCompile;
-  mat.onBeforeCompile = sh => { if (prev) prev(sh); sh.vertexShader = 'attribute vec3 offs;\n' + sh.vertexShader.replace('#include <project_vertex>', BILL_PROJECT); };
-  mat.side = THREE.DoubleSide; mat.shadowSide = THREE.DoubleSide;
-  return mat;
-}
-const leafMat = billboard(foliageMat(puffTex, 0.5, 0.07)), bushMat = foliageMat(puffTex, 0.5, 0.05);
-const frondMat = billboard(foliageMat(boughTex, 0.4, 0.045)), coreMat = foliageMat(coreTex, 0.42, 0.02);
-const boughDepthMat = billboard(new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking, map: boughTex, alphaTest: 0.4 }));
-const leafDepthMat = billboard(new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking, map: puffTex, alphaTest: 0.5 }));
-function spriteGeo(list) {
-  const pos = [], nrm = [], uv = [], col = [], offs = [], idx = [];
-  list.forEach(({ c, r: rad, n, br, ang }, i) => {
-    for (const [cx, cy] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) { pos.push(c.x, c.y, c.z); nrm.push(n.x, n.y, n.z); uv.push((cx + 1) / 2, (cy + 1) / 2); col.push(br, br, br); offs.push(cx * rad, cy * rad, ang); }
-    idx.push(i * 4, i * 4 + 1, i * 4 + 2, i * 4, i * 4 + 2, i * 4 + 3);
-  });
-  const g = new THREE.BufferGeometry();
-  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('normal', new THREE.Float32BufferAttribute(nrm, 3));
-  g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
-  g.setAttribute('offs', new THREE.Float32BufferAttribute(offs, 3)); g.setIndex(idx);
-  return g;
-}
+  // a single leaf: pointed oval with a lit side and a midrib
+  const leaf = (x, y, len, wid, rot, c, k, teeth) => {
+    g.save(); g.translate(x, y); g.rotate(rot);
+    g.fillStyle = rgb(c, k); g.beginPath(); g.moveTo(0, 0);
+    if (teeth) { for (let i = 1; i <= 8; i++) { const t = i / 8, ww = wid * Math.sin(Math.PI * Math.min(1, t * 1.15)) * (i % 2 ? 1.08 : 0.92); g.lineTo(ww, t * len); } for (let i = 8; i >= 1; i--) { const t = i / 8, ww = wid * Math.sin(Math.PI * Math.min(1, t * 1.15)) * (i % 2 ? 1.08 : 0.92); g.lineTo(-ww, t * len); } }
+    else { g.bezierCurveTo(wid * 1.1, len * 0.22, wid * 0.85, len * 0.78, 0, len); g.bezierCurveTo(-wid * 0.85, len * 0.78, -wid * 1.1, len * 0.22, 0, 0); }
+    g.fill();
+    g.fillStyle = 'rgba(255,255,210,0.13)'; g.beginPath(); g.moveTo(0, 0); g.bezierCurveTo(wid, len * 0.22, wid * 0.8, len * 0.78, 0, len); g.closePath(); g.fill();
+    g.strokeStyle = rgb(c, k * 1.25); g.lineWidth = 0.8; g.beginPath(); g.moveTo(0, len * 0.05); g.lineTo(0, len * 0.9); g.stroke();
+    g.restore();
+  };
+  // ---- silver birch: thin twigs hanging down, small toothed leaves
+  {
+    const [w, h] = clip('birch');
+    const cols = [[40, 62, 26], [60, 86, 32], [80, 108, 42], [102, 128, 54]];
+    core(w / 2, h * 0.5, w * 0.36, h * 0.36, [44, 66, 28], 60);
+    for (let pass = 0; pass < 4; pass++) for (let i = 0; i < 10; i++) {
+      let x = w * (0.08 + TR() * 0.84), y = h * (0.02 + TR() * 0.15), a = Math.PI / 2 + (TR() - 0.5) * 0.9;
+      g.strokeStyle = 'rgb(70,44,34)'; g.lineWidth = 1.2; g.beginPath(); g.moveTo(x, y);
+      const pts = [];
+      for (let s = 0; s < 16; s++) { a += (Math.PI / 2 - a) * 0.12 + (TR() - 0.5) * 0.2; x += Math.cos(a) * h * 0.055; y += Math.sin(a) * h * 0.055; g.lineTo(x, y); pts.push([x, y, a]); }
+      g.stroke();
+      for (const [px, py, pa] of pts) for (const s of [-1, 1]) if (TR() < 0.8) {
+        const l = 15 + TR() * 9;
+        leaf(px, py, l, l * 0.45, pa - Math.PI / 2 + s * (0.5 + TR() * 0.6), cols[pass], 0.85 + TR() * 0.3, true);
+      }
+    }
+    g.restore();
+  }
+  // ---- rowan / broadleaf: a twig with larger leaves fanning out
+  {
+    const [w, h] = clip('rowan');
+    const cols = [[32, 54, 24], [48, 78, 32], [68, 100, 42], [92, 124, 54]];
+    core(w / 2, h * 0.5, w * 0.32, h * 0.32, [30, 50, 22], 60);
+    for (let pass = 0; pass < 4; pass++) for (let i = 0; i < 8; i++) {
+      const x0 = w / 2 + (TR() - 0.5) * w * 0.3, y0 = h * 0.95, a0 = -Math.PI / 2 + (TR() - 0.5) * 1.8, L = h * (0.35 + TR() * 0.35);
+      const x1 = x0 + Math.cos(a0) * L, y1 = y0 + Math.sin(a0) * L;
+      g.strokeStyle = 'rgb(76,56,40)'; g.lineWidth = 1.6; g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y1); g.stroke();
+      for (let t = 0.3; t <= 1.0; t += 0.1) {
+        const px = x0 + (x1 - x0) * t, py = y0 + (y1 - y0) * t;
+        for (const s of [-1, 1]) leaf(px, py, 26 + TR() * 12, 9 + TR() * 4, a0 - Math.PI / 2 + s * (0.9 + TR() * 0.4) + Math.PI, cols[pass], 0.85 + TR() * 0.3, false);
+      }
+      leaf(x1, y1, 30, 10, a0 - Math.PI / 2, cols[pass], 1, false);
+    }
+    g.restore();
+  }
+  // ---- low shrub (blueberry / juniper mix): small dense leaves on a mound
+  {
+    const [w, h] = clip('bush');
+    const cols = [[30, 52, 26], [50, 80, 34], [74, 104, 44], [98, 124, 56]];
+    for (let pass = 0; pass < 4; pass++) for (let i = 0; i < 260; i++) {
+      const a = TR() * Math.PI, r = Math.sqrt(TR()) * w * 0.48, x = w / 2 + Math.cos(a) * r, y = h - 8 - Math.sin(a) * r * (h / w) * 1.6 * (0.6 + 0.4 * pass / 3);
+      leaf(x, y, 10 + TR() * 8, 4 + TR() * 2, TR() * 6.28, cols[pass], 0.85 + TR() * 0.3, false);
+    }
+    g.restore();
+  }
+  // ---- dead lower spruce twigs (grey, bare) for the bottom of old trees
+  {
+    const [w, h] = clip('dead');
+    g.strokeStyle = 'rgba(92,86,78,1)';
+    for (let i = 0; i < 40; i++) { const x0 = 4, y0 = h / 2 + (TR() - 0.5) * 20, a = (TR() - 0.5) * 1.6, L = w * (0.3 + TR() * 0.65); g.lineWidth = 1 + TR() * 1.5; g.beginPath(); g.moveTo(x0, y0); g.lineTo(x0 + Math.cos(a) * L, y0 + Math.sin(a) * L); g.stroke(); }
+    g.restore();
+  }
+});
+const foliageTex = texFrom(foliageC); foliageTex.wrapS = foliageTex.wrapT = THREE.ClampToEdgeWrapping;
+const puffTex = foliageTex;          // shrubs below reuse the atlas
+// bark atlas: left half rough grey-brown conifer bark, right half white birch bark with dark lenticels
+const barkC2 = makeCanvas(256, 512, (g, w, h) => {
+  g.fillStyle = '#6b5d50'; g.fillRect(0, 0, 128, h);
+  for (let i = 0; i < 900; i++) { const x = TR() * 128, y = TR() * h, l = 10 + TR() * 40, k = 0.6 + TR() * 0.7; g.fillStyle = `rgba(${40 * k | 0},${32 * k | 0},${26 * k | 0},0.55)`; g.fillRect(x, y, 1.5 + TR() * 2.5, l); }
+  for (let i = 0; i < 500; i++) { const x = TR() * 128, y = TR() * h, k = 0.9 + TR() * 0.5; g.fillStyle = `rgba(${150 * k | 0},${132 * k | 0},${112 * k | 0},0.35)`; g.beginPath(); g.ellipse(x, y, 3 + TR() * 6, 5 + TR() * 10, 0, 0, 6.28); g.fill(); }
+  g.fillStyle = '#e8e4da'; g.fillRect(128, 0, 128, h);
+  for (let i = 0; i < 70; i++) { g.fillStyle = `rgba(${150 + TR() * 40 | 0},${146 + TR() * 36 | 0},${136 + TR() * 30 | 0},0.25)`; g.fillRect(128 + TR() * 128, TR() * h, 10 + TR() * 30, 6 + TR() * 20); }
+  for (let i = 0; i < 420; i++) { const x = 128 + TR() * 128, y = TR() * h, k = TR(); g.fillStyle = `rgba(${40 + k * 50 | 0},${36 + k * 44 | 0},${32 + k * 36 | 0},${0.45 + TR() * 0.4})`; g.fillRect(x, y, 3 + TR() * 12, 0.8 + TR() * 1.4); }
+  for (let i = 0; i < 9; i++) { const x = 128 + TR() * 128, y = TR() * h, ww = 3 + TR() * 5, hh = 3 + TR() * 6; g.fillStyle = 'rgba(30,26,24,0.75)'; g.beginPath(); g.moveTo(x, y - hh); g.lineTo(x + ww, y); g.lineTo(x, y + hh * 0.6); g.lineTo(x - ww, y); g.fill(); }
+  for (let i = 0; i < 400; i++) { g.fillStyle = `rgba(160,150,140,${0.15 + TR() * 0.2})`; g.fillRect(128 + TR() * 128, TR() * h, 2 + TR() * 6, 1); }
+});
+const barkTex2 = texFrom(barkC2), barkNrm2 = normalFrom(barkC2, 3);
+const treeBarkMat = new THREE.MeshStandardMaterial({ map: barkTex2, normalMap: barkNrm2, vertexColors: true, roughness: 0.93, envMapIntensity: 0.35 });
+// logs and stumps elsewhere keep the plain bark
 const trunkMat = new THREE.MeshStandardMaterial({ map: barkTex, normalMap: barkNrm, color: 0xffffff, emissive: 0x3a2412, roughness: 0.95 });
 trunkMat.color.setRGB(1.9, 1.5, 1.15); trunkMat._lin = true; trunkMat.emissive.convertSRGBToLinear(); barkTex.encoding = THREE.sRGBEncoding;
+// squeeze a 0..1 card geometry into one region of the foliage atlas
+function atlasUV(geo, key) { const [u0, v0, u1, v1] = uvOf(key), uv = geo.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, u0 + uv.getX(i) * (u1 - u0), v0 + uv.getY(i) * (v1 - v0)); return geo; }
+// foliage: lit as soft volumes (both faces share the front lighting, like light through leaves), swaying with height
+const foliageMat = (wind, hs) => {
+  const m = addWind(new THREE.MeshLambertMaterial({ map: foliageTex, alphaTest: 0.42, vertexColors: true, side: THREE.DoubleSide, emissive: 0x0a1206 }), wind, hs);
+  const prev = m.onBeforeCompile;
+  m.onBeforeCompile = sh => { prev(sh); sh.vertexShader = sh.vertexShader.replace('#include <lights_lambert_vertex>', '#include <lights_lambert_vertex>\n#ifdef DOUBLE_SIDED\n vLightBack = vLightFront * 0.82; vIndirectBack = vIndirectFront;\n#endif'); };
+  return m;
+};
+const bushMat = foliageMat(0.05, 0.6);
 const depthMat = map => new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking, map, alphaTest: 0.5 });
-function limbGeo(a, b, r0, r1, seg = 7) {
-  const len = a.distanceTo(b), g = new THREE.CylinderGeometry(r1, r0, len, seg).translate(0, len / 2, 0);
-  g.applyMatrix4(new THREE.Matrix4().compose(a, new THREE.Quaternion().setFromUnitVectors(up3, b.clone().sub(a).normalize()), new V3(1, 1, 1)));
+const foliageDepth = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking, map: foliageTex, alphaTest: 0.42, side: THREE.DoubleSide });
+// ---- geometry builder: positions, normals, uvs, colours, indices
+function TB() { return { pos: [], nrm: [], uv: [], col: [], idx: [] }; }
+function tbGeo(B) {
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(B.pos, 3)); g.setAttribute('normal', new THREE.Float32BufferAttribute(B.nrm, 3));
+  g.setAttribute('uv', new THREE.Float32BufferAttribute(B.uv, 2)); g.setAttribute('color', new THREE.Float32BufferAttribute(B.col, 3)); g.setIndex(B.idx);
   return g;
 }
-// one leaf clump: a handful of overlapping sprites around a centre, lit as part of one smooth crown
-function puffCards(list, c0, r, canopyC, n) {
-  const lump = 0.88 + TR() * 0.28;
-  for (let k = 0; k < n; k++) {
-    const u = TR() * 2 - 1, th = TR() * 6.28, hr = Math.sqrt(1 - u * u);
-    const off = new V3(hr * Math.cos(th), u * 0.8 + 0.1, hr * Math.sin(th)).multiplyScalar(k ? 0.5 : 0);
-    const c = c0.clone().addScaledVector(off, r);
-    // light the clump as its own little ball sitting on the big crown
-    const n3 = c.clone().sub(canopyC).normalize().multiplyScalar(0.6).addScaledVector(off, 0.9).add(new V3(0, 0.45, 0)).normalize();
-    const up = clamp(n3.y * 0.5 + 0.5, 0, 1);
-    list.push({ c, r: r * (0.66 + TR() * 0.3), n: n3, br: (0.52 + 0.74 * up * up) * lump + (TR() - 0.5) * 0.06, ang: (TR() - 0.5) * 1.6 });
+const _tq = new THREE.Quaternion(), _tn2 = new V3(), _tp2 = new V3();
+// tapered limb with bark-atlas uvs (u0..u1 picks the atlas half) and a colour ramp from base to tip
+function tbTube(B, a, b, r0, r1, seg, u0, u1, c0, c1) {
+  const dir = _tn2.copy(b).sub(a), len = dir.length(); dir.normalize(); _tq.setFromUnitVectors(up3, dir);
+  const base = B.pos.length / 3, vo = TR();
+  for (let j = 0; j <= 1; j++) for (let i = 0; i <= seg; i++) {
+    const t = i / seg * Math.PI * 2, r = j ? r1 : r0, c = j ? c1 : c0;
+    const n = new V3(Math.cos(t), 0, Math.sin(t)).applyQuaternion(_tq), p = new V3(Math.cos(t) * r, j * len, Math.sin(t) * r).applyQuaternion(_tq).add(a);
+    B.pos.push(p.x, p.y, p.z); B.nrm.push(n.x, n.y, n.z); B.uv.push(u0 + (u1 - u0) * i / seg, vo + j * len * 0.45); B.col.push(c[0], c[1], c[2]);
   }
+  for (let i = 0; i < seg; i++) { const a0 = base + i, b0 = a0 + 1, a1 = a0 + seg + 1, b1 = a1 + 1; B.idx.push(a0, a1, b0, b0, a1, b1); }
 }
-function broadleaf(trunkH, puffs, canopyC, perPuff, limbR) {
-  const parts = [limbGeo(new V3(0, 0, 0), new V3(0, trunkH, 0), 0.26, 0.15, 10), new THREE.CylinderGeometry(0.3, 0.44, 0.3, 10).translate(0, 0.1, 0)], cards = [];
-  const top = new V3(0, trunkH - 0.1, 0);
-  puffs.forEach(([x, y, z, r], i) => {
-    const c = new V3(x, y, z);
-    if (i < 7) { const mid = top.clone().lerp(c, 0.5).add(new V3(0, -0.25, 0)); parts.push(limbGeo(top, mid, limbR, limbR * 0.7), limbGeo(mid, c, limbR * 0.7, limbR * 0.3)); }
-    puffCards(cards, c, r, canopyC, perPuff);
-  });
-  return { trunk: mergeGeos(parts), leaves: spriteGeo(cards), mat: leafMat, depth: leafDepthMat };
-}
-const inBall = (cx, cy, cz, rx, ry, rz) => { for (;;) { const x = TR() * 2 - 1, y = TR() * 2 - 1, z = TR() * 2 - 1; if (x * x + y * y + z * z <= 1) return [cx + x * rx, cy + y * ry, cz + z * rz]; } };
-function conifer(height, tiers, perTier, reach0, droop, lift) {
-  // rings of hanging needle sprays stepping up a cone; each ring is turned and jittered so no shelves form
-  const list = [], N = Math.round(tiers * perTier * 0.8);
-  for (let i = 0; i < N; i++) {
-    // golden-angle spiral: evenly covers the cone without lining up into rings
-    const f = Math.pow(i / (N - 1), 0.8), a = i * 2.39996 + (TR() - 0.5) * 0.4, reach = reach0 * Math.pow(1 - f, 0.85) + 0.15;
-    const rr = reach * (0.42 + TR() * 0.3), size = reach * 0.55 + 0.42 + TR() * 0.2;
-    const y = 1.5 + f * (height - 1.7) + (TR() - 0.5) * 0.35;
-    const c = new V3(Math.cos(a) * rr, y - size * (0.25 + droop) + lift * rr * 0.3, Math.sin(a) * rr);
-    const n3 = new V3(Math.cos(a) * 0.7, 0.72, Math.sin(a) * 0.7).normalize();
-    list.push({ c, r: size, n: n3, br: (0.8 + 0.45 * f) * (0.85 + TR() * 0.35), ang: (TR() - 0.5) * 0.5 });
+// a foliage card: from p along du, ±dv across; nf(pos) gives the shading normal, cf(pos, u) the brightness
+function tbCard(B, p, du, dv, uvr, u0, u1, nf, cf) {
+  const base = B.pos.length / 3;
+  const corners = [[p.clone().sub(dv), u0, 0], [p.clone().add(dv), u0, 1], [p.clone().add(du).add(dv), u1, 1], [p.clone().add(du).sub(dv), u1, 0]];
+  for (const [q, u, v] of corners) {
+    const n = nf(q), c = cf(q, u);
+    B.pos.push(q.x, q.y, q.z); B.nrm.push(n.x, n.y, n.z); B.uv.push(uvr[0] + (uvr[2] - uvr[0]) * u, uvr[1] + (uvr[3] - uvr[1]) * v); B.col.push(c, c, c);
   }
-  list.push({ c: new V3(0, height - 0.5, 0), r: 0.7, n: up3, br: 1.25, ang: 0 });
-  const core = [];
-  for (let k = 0; k < 3; k++) { const a = k / 3 * Math.PI; core.push({ p: new V3(0, 0.9, 0), right: new V3(Math.cos(a), 0, Math.sin(a)).multiplyScalar(reach0 * 0.66), up: new V3(0, height - 0.9, 0), n: new V3(Math.cos(a + 1.57) * 0.5, 0.86, Math.sin(a + 1.57) * 0.5).normalize(), c0: 0.5, c1: 0.85 }); }
-  return { trunk: mergeGeos([limbGeo(new V3(0, 0, 0), new V3(0, height - 0.4, 0), 0.2, 0.03, 8), new THREE.CylinderGeometry(0.24, 0.36, 0.25, 9).translate(0, 0.1, 0)]), leaves: spriteGeo(list), mat: frondMat, depth: boughDepthMat, core: cardGeo(core) };
+  B.idx.push(base, base + 1, base + 2, base, base + 2, base + 3);
 }
-const P = (n, fn) => Array.from({ length: n }, fn);
+// a card standing on its centre (for leaf clusters): centre c, half-extents ex (width) and ey (height)
+// canvas x runs along ex, canvas 'up' along ey
+function tbBlob(B, c, ex, ey, uvr, nf, cf) { tbCard(B, c.clone().sub(ex), ex.clone().multiplyScalar(2), ey, uvr, 0, 1, nf, cf); }
+const BARK = { spruce: [[0.62, 0.55, 0.5], [0.72, 0.64, 0.56]], pineLow: [0.62, 0.54, 0.48], pineHigh: [1.35, 0.78, 0.5], birch: [1, 1, 1], birchBase: [0.42, 0.4, 0.38], rowan: [0.62, 0.6, 0.56] };
+const radialN = (cx, cz, upk, out = new V3()) => q => { const x = q.x - cx, z = q.z - cz, l = Math.hypot(x, z) || 1; return out.set(x / l * 0.55, upk, z / l * 0.55).normalize().clone(); };
+// ---- Norway spruce: whorls of drooping boughs whose tips curl up, a dark inner cone, dead twigs low down
+function spruceGeo(Ht, R0, gap) {
+  const T = TB(), F = TB(), spray = uvOf('spray'), core = uvOf('core'), dead = uvOf('dead');
+  tbTube(T, new V3(0, -0.5, 0), new V3(0, Ht * 0.5, 0), 0.026 * Ht, 0.014 * Ht, 10, 0, 0.5, BARK.spruce[0], BARK.spruce[1]);
+  tbTube(T, new V3(0, Ht * 0.5, 0), new V3(0, Ht, 0), 0.014 * Ht, 0.012, 7, 0, 0.5, BARK.spruce[1], BARK.spruce[1]);
+  const y0 = 1.6 + TR() * 0.5, nUp = radialN(0, 0, 0.95);
+  for (let k = 0; k < 7; k++) {                     // dead twigs on the bare lower trunk
+    const a = TR() * 6.28, y = 0.8 + TR() * (y0 - 0.9), L = 0.6 + TR() * 0.8;
+    tbCard(F, new V3(0, y, 0), new V3(Math.cos(a) * L, -0.15, Math.sin(a) * L), new V3(-Math.sin(a) * 0.25, 0.05, Math.cos(a) * 0.25), dead, 0, 1, nUp, () => 0.6);
+  }
+  let w = 0;
+  for (let y = y0; y < Ht - 0.6; y += gap * (0.85 + TR() * 0.3), w++) {
+    const f = (y - y0) / (Ht - y0), L = R0 * Math.pow(1 - f, 0.9) + 0.35, nb = f > 0.75 ? 4 : 5, pitch = -0.52 + f * 0.7;
+    for (let k = 0; k < nb; k++) {
+      const a = w * 2.4 + k / nb * 6.283 + (TR() - 0.5) * 0.6, L1 = L * (0.8 + TR() * 0.35);
+      const hor = new V3(Math.cos(a), 0, Math.sin(a)), side = new V3(-Math.sin(a), 0, Math.cos(a)), roll = (TR() - 0.5) * 0.7;
+      const half = 0.14 + 0.22 * L1, dv = side.clone().multiplyScalar(Math.cos(roll) * half).add(new V3(0, Math.sin(roll) * half, 0));
+      const p0 = new V3(0, y, 0).addScaledVector(hor, 0.06);
+      const d1 = hor.clone().multiplyScalar(Math.cos(pitch) * L1 * 0.55).setY(Math.sin(pitch) * L1 * 0.55);
+      const p1 = p0.clone().add(d1), p2a = pitch + 0.5;
+      const d2 = hor.clone().multiplyScalar(Math.cos(p2a) * L1 * 0.47).setY(Math.sin(p2a) * L1 * 0.47);
+      const br = (0.86 + TR() * 0.28) * (0.7 + 0.3 * f);
+      const cf = (q, u) => br * (0.5 + 0.55 * Math.min(1, Math.hypot(q.x, q.z) / Math.max(0.4, L1)));
+      tbCard(F, p0, d1, dv, spray, 0, 0.55, nUp, cf);
+      tbCard(F, p1, d2, dv, spray, 0.55, 1, nUp, cf);
+    }
+  }
+  // inner cone: three crossed vertical cards
+  for (let k = 0; k < 3; k++) {
+    const a = k / 3 * Math.PI, wv = new V3(Math.cos(a), 0, Math.sin(a)).multiplyScalar(R0 * 0.62), hh = (Ht - y0 + 0.5) / 2;
+    tbBlob(F, new V3(0, y0 - 0.4 + hh, 0), wv, new V3(0, hh, 0), core, nUp, (q) => 0.55 + 0.35 * q.y / Ht);
+  }
+  return { trunk: tbGeo(T), leaves: tbGeo(F), mat: foliageMat(0.16, 0.055) };
+}
+// ---- Scots pine: tall straight bole, grey-brown below and orange above, a high crown of flat needle tufts
+function pineGeo(Ht) {
+  const T = TB(), F = TB(), tuft = uvOf('tuft');
+  const c0 = Ht * 0.5;                             // crown base
+  let prev = new V3(0, -0.5, 0);
+  for (let s = 1; s <= 4; s++) {                   // a slightly wandering trunk
+    const t = s / 4, p = new V3((TR() - 0.5) * 0.25 * t, Ht * t, (TR() - 0.5) * 0.25 * t);
+    const lerpC = (u) => BARK.pineLow.map((v, i) => v + (BARK.pineHigh[i] - v) * clamp((u - 0.35) / 0.3, 0, 1));
+    tbTube(T, prev, p, 0.024 * Ht * (1 - (s - 1) / 4 * 0.75), 0.024 * Ht * (1 - s / 4 * 0.75) + 0.01, 9, 0, 0.5, lerpC((s - 1) / 4), lerpC(t));
+    prev = p;
+  }
+  const cc = new V3(0, Ht * 0.8, 0), nCrown = q => q.clone().sub(cc).multiplyScalar(0.6).add(new V3(0, 2.2, 0)).normalize();
+  const nb = 11 + Math.floor(TR() * 3);
+  for (let i = 0; i < nb; i++) {
+    const f = i / nb, y = c0 + f * (Ht * 0.44), a = i * 2.39 + TR() * 0.5, L = (2.3 + TR() * 1.5) * (1 - f * 0.55);
+    const start = new V3(0, y, 0), dir = new V3(Math.cos(a), 0.45 + TR() * 0.4, Math.sin(a)).normalize(), end = start.clone().addScaledVector(dir, L);
+    tbTube(T, start, end, 0.07 * (1 - f * 0.4), 0.025, 6, 0, 0.5, BARK.pineHigh, BARK.pineHigh);
+    const ends = [end];
+    for (let s = 0; s < 2; s++) { const sa = a + (s ? 0.7 : -0.7) + (TR() - 0.5) * 0.4, sp = start.clone().lerp(end, 0.5 + TR() * 0.3), se = sp.clone().add(new V3(Math.cos(sa) * L * 0.45, 0.25 + TR() * 0.4, Math.sin(sa) * L * 0.45)); tbTube(T, sp, se, 0.03, 0.015, 5, 0, 0.5, BARK.pineHigh, BARK.pineHigh); ends.push(se); }
+    ends.push(start.clone().lerp(end, 0.55));
+    for (const e of ends) for (let k = 0; k < 7; k++) {
+      const c = e.clone().add(new V3((TR() - 0.5) * 1.3, (TR() - 0.35) * 0.6, (TR() - 0.5) * 1.3)), s = 0.62 + TR() * 0.4;
+      const t1 = (TR() - 0.5) * 0.9, t2 = TR() * 6.28;
+      const ex = new V3(Math.cos(t2), Math.sin(t1) * 0.4, Math.sin(t2)).normalize().multiplyScalar(s), ey = new V3(-Math.sin(t2), Math.sin(-t1), Math.cos(t2)).normalize().multiplyScalar(s);
+      const br = 0.8 + TR() * 0.3;
+      tbBlob(F, c, ex, ey, tuft, nCrown, (q) => br * (0.62 + 0.45 * clamp((q.y - c0) / (Ht - c0), 0, 1)));
+    }
+  }
+  return { trunk: tbGeo(T), leaves: tbGeo(F), mat: foliageMat(0.18, 0.05) };
+}
+// ---- silver birch / rowan: limbs climbing out of a slim trunk, leaf twigs hanging (birch) or fanning (rowan) at their ends
+function leafyGeo(Ht, crownR, kind) {
+  const T = TB(), F = TB(), birch = kind === 'birch', reg = uvOf(birch ? 'birch' : 'rowan');
+  const lean = new V3((TR() - 0.5) * 0.5, Ht, (TR() - 0.5) * 0.5), r0 = (birch ? 0.016 : 0.02) * Ht;
+  tbTube(T, new V3(0, -0.4, 0), new V3(lean.x * 0.15, 1.4, lean.z * 0.15), r0 * 1.15, r0, 9, birch ? 0.5 : 0, birch ? 1 : 0.5, birch ? BARK.birchBase : BARK.rowan, birch ? [0.82, 0.8, 0.78] : BARK.rowan);
+  tbTube(T, new V3(lean.x * 0.15, 1.4, lean.z * 0.15), lean.clone().multiplyScalar(0.92), r0, 0.03, 8, birch ? 0.5 : 0, birch ? 1 : 0.5, birch ? [0.95, 0.94, 0.92] : BARK.rowan, birch ? BARK.birch : BARK.rowan);
+  const cc = new V3(lean.x * 0.6, Ht * (birch ? 0.62 : 0.6), lean.z * 0.6), cy = Ht * (birch ? 0.4 : 0.36);
+  const nCrown = q => q.clone().sub(cc).multiplyScalar(1 / crownR).add(new V3(0, 0.55, 0)).normalize();
+  const nl = birch ? 14 : 10;
+  for (let i = 0; i < nl; i++) {
+    const f = i / nl, y = Ht * (birch ? 0.35 : 0.3) + f * Ht * 0.52, a = i * 2.39 + TR() * 0.6;
+    const start = lean.clone().multiplyScalar(y / Ht);
+    const L = crownR * (birch ? 0.9 : 1.05) * (1 - Math.abs(f - 0.35) * 0.7) * (0.75 + TR() * 0.4);
+    const dir = new V3(Math.cos(a), birch ? 1.1 : 0.6, Math.sin(a)).normalize(), end = start.clone().addScaledVector(dir, L);
+    tbTube(T, start, end, 0.05 * (1 - f * 0.5) + 0.015, 0.015, 5, birch ? 0.5 : 0, birch ? 1 : 0.5, birch ? [0.7, 0.68, 0.66] : BARK.rowan, birch ? [0.5, 0.42, 0.38] : BARK.rowan);
+    // leaf twigs along the outer two thirds of the limb
+    const nCl = birch ? 9 : 8;
+    for (let k = 0; k < nCl; k++) {
+      const t = (birch ? 0.18 : 0.35) + (birch ? 0.82 : 0.65) * k / (nCl - 1), p = start.clone().lerp(end, t).add(new V3((TR() - 0.5) * 0.8, (TR() - 0.5) * 0.5, (TR() - 0.5) * 0.8));
+      const s = (birch ? 0.75 : 0.85) + TR() * 0.35, out = p.clone().sub(cc).setY(0).normalize(), turn = TR() * 6.28;
+      // birch twigs hang: cards stand up, centred a little below the limb; rowan twigs lie flatter
+      const ex = new V3(Math.cos(turn), 0, Math.sin(turn)).multiplyScalar(s);
+      const ey = birch ? new V3(out.x * 0.25, 1, out.z * 0.25).normalize().multiplyScalar(s) : new V3(out.x, 0.8, out.z).normalize().multiplyScalar(s);
+      const c = birch ? p.clone().add(new V3(0, -s * 0.6, 0)) : p;
+      const br = 0.82 + TR() * 0.3;
+      tbBlob(F, c, ex, ey, reg, nCrown, (q) => br * (0.55 + 0.5 * clamp(q.clone().sub(cc).length() / crownR, 0, 1)) * (0.85 + 0.25 * clamp((q.y - cy) / (Ht - cy), 0, 1)));
+    }
+  }
+  return { trunk: tbGeo(T), leaves: tbGeo(F), mat: foliageMat(birch ? 0.2 : 0.14, 0.08) };
+}
+// species: [geometry, share of the valley's trees, trunk collision radius, eye-level foliage radius (blocks sight), height]
 const SPECIES = [
-  // round, full crown
-  broadleaf(2.5, P(16, () => [...inBall(0, 4.3, 0, 1.45, 1.3, 1.45), 0.95 + TR() * 0.3]), new V3(0, 3.9, 0), 5, 0.08),
-  // tall, lumpy crown
-  broadleaf(2.1, P(19, () => [...inBall(0, 5.0, 0, 0.95, 2.3, 0.95), 0.78 + TR() * 0.28]), new V3(0, 4.6, 0), 5, 0.07),
-  // spreading crown: a few big clumps carried on visible limbs
-  broadleaf(2.0, [...P(5, (_, i) => { const a = i / 5 * 6.28 + TR() * 0.5, d = 1.7 + TR() * 0.5; return [Math.cos(a) * d, 3.7 + TR() * 0.7, Math.sin(a) * d, 1.3 + TR() * 0.25]; }), [0, 4.9, 0, 1.35], [0.3, 4.2, -0.3, 1.1]], new V3(0, 3.4, 0), 8, 0.1),
-  // two-storey crown
-  broadleaf(2.3, [...P(10, () => [...inBall(0.25, 3.9, 0, 1.45, 1.0, 1.45), 0.9 + TR() * 0.3]), ...P(8, () => [...inBall(-0.3, 5.6, 0.15, 1.05, 0.95, 1.05), 0.8 + TR() * 0.25])], new V3(0, 4.2, 0), 5, 0.08),
-  // dense spruce
-  conifer(8, 15, 9, 2.3, 0.3, 0.1),
-  // feathery fir with longer, more open boughs
-  conifer(7.2, 10, 8, 2.6, 0.2, 0.32),
+  { ...spruceGeo(19, 3.1, 0.5), w: 0.28, r: 0.42, lr: 2.0, h: 19 },
+  { ...spruceGeo(11, 2.1, 0.4), w: 0.2, r: 0.26, lr: 1.5, h: 11 },
+  { ...pineGeo(17), w: 0.2, r: 0.32, lr: 0, h: 17 },
+  { ...leafyGeo(13, 2.6, 'birch'), w: 0.22, r: 0.2, lr: 0, h: 13 },
+  { ...leafyGeo(8.5, 2.4, 'rowan'), w: 0.1, r: 0.17, lr: 0, h: 8.5 },
 ];
-const treeTrunks = [], treeLeaves = [], treeCores = [], treeN = SPECIES.map(() => 0);
+const treeTrunks = [], treeLeaves = [], treeN = SPECIES.map(() => 0);
 for (const sp of SPECIES) {
-  const t = new THREE.InstancedMesh(sp.trunk, trunkMat, TREES), l = new THREE.InstancedMesh(sp.leaves, sp.mat, TREES);
-  l.customDepthMaterial = sp.depth || depthMat(sp.mat.map);
-  const c = sp.core ? new THREE.InstancedMesh(sp.core, coreMat, TREES) : null;
-  if (c) c.customDepthMaterial = depthMat(coreTex);
-  for (const m of [t, l, c]) if (m) { m.castShadow = true; m.receiveShadow = true; m.frustumCulled = false; }
+  const t = new THREE.InstancedMesh(sp.trunk, treeBarkMat, TREES), l = new THREE.InstancedMesh(sp.leaves, sp.mat, TREES);
+  l.customDepthMaterial = foliageDepth;
+  for (const m of [t, l]) { m.castShadow = true; m.receiveShadow = true; m.frustumCulled = false; }
   t.userData.surface = 'wood';
-  treeTrunks.push(t); treeLeaves.push(l); treeCores.push(c);
+  treeTrunks.push(t); treeLeaves.push(l);
 }
 {
   const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), s = new V3(), p = new V3(), col = new THREE.Color();
-  let no = 0, np = 0;
-  for (let i = 0; i < 4500 && no + np < TREES; i++) {
-    const inside = no + np < 300;
+  const cum = []; SPECIES.reduce((a, sp, i) => (cum[i] = a + sp.w), 0);
+  let placed = 0;
+  for (let i = 0; i < 5000 && placed < TREES; i++) {
+    const inside = placed < 300;
     const a = R() * Math.PI * 2, d = inside ? 6 + Math.sqrt(R()) * 52 * MS : 62 * MS + R() * 46 * MS;
-    const x = Math.cos(a) * d, z = Math.sin(a) * d, sc = 0.85 + R() * 0.55;
-    if (!freeSpot(x, z, 1.2 * sc, inside ? 57 * MS : 112 * MS)) continue;
+    const x = Math.cos(a) * d, z = Math.sin(a) * d, sc = 0.78 + R() * 0.45, pick = R() * cum[cum.length - 1];
+    let v = cum.findIndex(c => pick <= c); if (v < 0) v = 0;
+    const sp = SPECIES[v];
+    if (!freeSpot(x, z, (sp.lr > 0 ? 1.6 : 1.0) * sc, inside ? 57 * MS : 112 * MS)) continue;
     if (inside && fbm(x * 0.028 + 11, z * 0.028 - 3) < 0.4) continue;   // leave open clearings
-    const base = terrainH(x, z) - 0.15, pine = R() < 0.42, tint = 0.8 + R() * 0.45;
-    m4.compose(p.set(x, base, z), q.setFromAxisAngle(up3, R() * 6), s.set(sc, sc * (0.9 + R() * 0.25), sc));
-    let v;
-    if (pine) { v = 4 + (np++ % 2); col.setRGB(tint * 0.8, tint * 0.86, tint * 0.66); }
-    else { v = no++ % 4; const w2 = R() * 0.2, sc2 = [[0.72, 0.9, 0.42], [0.98, 0.9, 0.3], [0.62, 0.84, 0.46], [0.84, 0.94, 0.36]][v]; col.setRGB(tint * (sc2[0] + w2 * 0.6), tint * sc2[1], tint * sc2[2]); }
+    const base = terrainH(x, z) - 0.15, tint = 0.86 + R() * 0.26;
+    m4.compose(p.set(x, base, z), q.setFromAxisAngle(up3, R() * 6), s.set(sc, sc * (0.92 + R() * 0.16), sc));
+    if (v <= 1) col.setRGB(tint * 0.92, tint * 1.0, tint * 0.94);
+    else if (v === 2) col.setRGB(tint * 0.95, tint, tint * 0.98);
+    else col.setRGB(tint * (1.0 + R() * 0.12), tint, tint * 0.85);
     const k = treeN[v]++;
     treeTrunks[v].setMatrixAt(k, m4); treeLeaves[v].setMatrixAt(k, m4); treeLeaves[v].setColorAt(k, col);
-    if (treeCores[v]) { treeCores[v].setMatrixAt(k, m4); treeCores[v].setColorAt(k, col); }
-    if (inside) colliders.push({ t: 'c', x, z, r: 0.34 * sc, lr: pine ? 1.3 * sc : 1.7 * sc, base, top: base + (pine ? 8 : 6) * sc, noStand: true });
+    placed++;
+    if (inside) colliders.push({ t: 'c', x, z, r: sp.r * sc, lr: sp.lr ? sp.lr * sc : undefined, base, top: base + sp.h * sc, noStand: true });
   }
-  SPECIES.forEach((_, v) => { treeTrunks[v].count = treeLeaves[v].count = treeN[v]; if (treeCores[v]) treeCores[v].count = treeN[v]; });
+  SPECIES.forEach((_, v) => { treeTrunks[v].count = treeLeaves[v].count = treeN[v]; });
 }
-scene.add(...treeTrunks, ...treeLeaves, ...treeCores.filter(Boolean));
+const treeCores = [];
+scene.add(...treeTrunks, ...treeLeaves);
 // ===================== extra scenery: forested hillsides, shrubs, reeds, stones, logs, fences, barrels, dock
 {
   const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), s = new V3(), p = new V3(), col = new THREE.Color(), e3 = new THREE.Euler();
@@ -1170,14 +1414,14 @@ scene.add(...treeTrunks, ...treeLeaves, ...treeCores.filter(Boolean));
   farPineTex.wrapS = farPineTex.wrapT = THREE.ClampToEdgeWrapping;
   const farMat = new THREE.MeshLambertMaterial({ map: farPineTex, alphaTest: 0.4 });
   const FAR = isTouch ? 500 : 1300;
-  const far = new THREE.InstancedMesh(cardGeo([0, 1].map(k => ({ p: new V3(0, 0, 0), right: new V3(k ? 0 : 1.7, 0, k ? 1.7 : 0), up: new V3(0, 8.5, 0), n: up3 }))), farMat, FAR);
+  const far = new THREE.InstancedMesh(cardGeo([0, 1].map(k => ({ p: new V3(0, 0, 0), right: new V3(k ? 0 : 2.4, 0, k ? 2.4 : 0), up: new V3(0, 15, 0), n: up3 }))), farMat, FAR);
   let n = 0;
   for (let i = 0; i < FAR * 4 && n < FAR; i++) {
     const a = R() * Math.PI * 2, d = 128 + Math.pow(R(), 0.8) * 140, x = Math.cos(a) * d, z = Math.sin(a) * d;
     if (fbm(x * 0.03 + 5, z * 0.03 + 9) < 0.42) continue;                      // leave alpine meadows between the stands
     const sc = 0.7 + R() * 0.7, t = 0.7 + R() * 0.5;
     far.setMatrixAt(n, m4.compose(p.set(x, terrainH(x, z) - 0.3, z), q.setFromAxisAngle(up3, R() * 6), s.set(sc, sc * (0.9 + R() * 0.4), sc)));
-    far.setColorAt(n++, col.setRGB(t * 1.45, t * 1.55, t * 1.2));
+    far.setColorAt(n++, col.setRGB(t * 0.95, t * 1.05, t * 0.9));
   }
   far.count = n; far.frustumCulled = false; scene.add(far);
   // --- shrubs: low leafy bushes scattered through the meadows
@@ -1188,7 +1432,7 @@ scene.add(...treeTrunks, ...treeLeaves, ...treeCores.filter(Boolean));
       const right = new V3(TR() - 0.5, 0, TR() - 0.5).normalize().multiplyScalar(sz);
       cards.push({ p: pp, right, up: new V3((TR() - 0.5) * 0.4, sz * 1.7, (TR() - 0.5) * 0.4), n: pp.clone().setY(0.9).normalize() });
     }
-    return cardGeo(cards);
+    return atlasUV(cardGeo(cards), 'bush');
   })();
   const bushes = new THREE.InstancedMesh(bushGeo, bushMat, 380);
   n = 0;
@@ -1213,7 +1457,12 @@ scene.add(...treeTrunks, ...treeLeaves, ...treeCores.filter(Boolean));
   }
   reeds.count = n; reeds.frustumCulled = false; scene.add(reeds);
   // --- loose stones and pebbles
-  const pebbles = new THREE.InstancedMesh(rockGeo, rockMat, 900);
+  const pebbleGeo = (() => {
+    const g = new THREE.IcosahedronGeometry(1, 1), p = g.attributes.position, v = new V3(), cc = [];
+    for (let i = 0; i < p.count; i++) { v.fromBufferAttribute(p, i); v.multiplyScalar(0.8 + fbm(v.x * 2 + 3, v.z * 2 + v.y) * 0.4); v.y *= 0.6; p.setXYZ(i, v.x, v.y, v.z); cc.push(0.92, 0.92, 0.9); }
+    g.setAttribute('color', new THREE.Float32BufferAttribute(cc, 3)); g.computeVertexNormals(); return g;
+  })();
+  const pebbles = new THREE.InstancedMesh(pebbleGeo, rockMat, 900);
   n = 0;
   for (let i = 0; i < 2600 && n < 900; i++) {
     const a = R() * Math.PI * 2, d = Math.sqrt(R()) * 72 * MS, x = Math.cos(a) * d, z = Math.sin(a) * d, h = terrainH(x, z);
@@ -1290,44 +1539,108 @@ scene.add(...treeTrunks, ...treeLeaves, ...treeCores.filter(Boolean));
   box(dx0, dx1, dz - 0.85, dz + 0.85, dTop - 0.4, dTop);
 }
 
-// --- grass: thousands of blade clumps, tinted to match the ground under them, swaying in the wind
-const grassMat = addWind(new THREE.MeshLambertMaterial({ map: grassBladeTex, alphaTest: 0.3 }), 0.13, 1.5);
-const GRASS_MAX = isTouch ? 8000 : 24000;
-const clumpGeo = (() => {
-  const cards = [];
-  for (let k = 0; k < 5; k++) {
-    const a = k / 5 * Math.PI + (TR() - 0.5) * 0.5, ro = 0.07 + TR() * 0.13, oa = TR() * 6.28;
-    cards.push({
-      p: new V3(Math.cos(oa) * ro, 0, Math.sin(oa) * ro),
-      right: new V3(Math.cos(a), 0, Math.sin(a)).multiplyScalar(0.34 + TR() * 0.16),
-      up: new V3((TR() - 0.5) * 0.26, 0.36 + TR() * 0.24, (TR() - 0.5) * 0.26),
-      n: up3,
-    });
-  }
-  return cardGeo(cards);
-})();
-const grass = new THREE.InstancedMesh(clumpGeo, grassMat, GRASS_MAX);
-{
-  const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), s = new V3(), p = new V3(), col = new THREE.Color();
-  let n = 0;
-  const RAD = BOUND + 2, SP = Math.sqrt(Math.PI * RAD * RAD / GRASS_MAX) * 0.98;   // spacing that fills the meadow evenly
-  for (let gz = -RAD; gz <= RAD && n < GRASS_MAX; gz += SP) for (let gx = -RAD; gx <= RAD && n < GRASS_MAX; gx += SP) {
-    const x = gx + (R() - 0.5) * SP * 0.9, z = gz + (R() - 0.5) * SP * 0.9;
-    if (Math.hypot(x, z) > RAD) continue;
-    const h = terrainH(x, z), nv = terrainNormal(x, z), gness = grassiness(x, z, h, nv.y);
-    if (gness < 0.5) continue;
-    let blocked = false; for (const c of colliders) if (c.t === 'b' && x > c.x0 - 0.2 && x < c.x1 + 0.2 && z > c.z0 - 0.2 && z < c.z1 + 0.2) { blocked = true; break; }
-    if (blocked) continue;
-    const sc = (0.75 + R() * 0.35) * (0.6 + 0.4 * gness);
-    grass.setMatrixAt(n, m4.compose(p.set(x, h - 0.03, z), q.setFromAxisAngle(up3, R() * 6), s.set(sc * (1 + R() * 0.4), sc, sc * (1 + R() * 0.4))));
-    groundColor(x, z, h, nv.y, col);
-    const mx = Math.max(col.r, col.g, col.b, 0.001), k = 0.5 + R() * 0.16;
-    grass.setColorAt(n++, col.setRGB((col.r / mx * 0.55 + 0.4) * k * 0.95, (col.g / mx * 0.55 + 0.4) * k * 1.04, (col.b / mx * 0.55 + 0.35) * k * 0.75));
-  }
-  grass.count = n; grass.userData.full = n;
+// --- paint the ground now that paths, houses and trees are known
+for (const c of colliders) if (c.t === 'c' && c.lr && c.lr > 1) { const key = Math.floor(c.x / 8) * 1000 + Math.floor(c.z / 8); if (!TREE_GRID.has(key)) TREE_GRID.set(key, []); TREE_GRID.get(key).push(c); }
+for (const ch of terrainChunks) {
+  const P = ch.geometry.attributes.position, N = ch.geometry.attributes.normal, C = ch.geometry.attributes.color, G = ch.geometry.attributes.gmask;
+  for (let i = 0; i < P.count; i++) { const gm = groundPaint(P.getX(i), P.getZ(i), P.getY(i), N.getY(i), _gc); C.setXYZ(i, _gc.r, _gc.g, _gc.b); G.setX(i, gm); }
+  C.needsUpdate = G.needsUpdate = true;
 }
-grass.customDepthMaterial = depthMat(grassBladeTex);
-grass.receiveShadow = true; grass.frustumCulled = false; scene.add(grass);
+// --- grass: a dense carpet of blade tufts that travels with the player. Tufts sit on a fixed world grid (so nothing
+//     swims as you move), take their height, density and tint from two small textures baked from the terrain, sway in
+//     the wind and fade out with distance. It all runs in the vertex shader.
+const grassBladeTex2 = texFrom(makeCanvas(512, 256, (g, w, h) => {
+  const blade = (x, ht, lean, wd, c0, c1, c2) => {
+    const gr = g.createLinearGradient(x, h, x + lean, h - ht); gr.addColorStop(0, c0); gr.addColorStop(0.55, c1); gr.addColorStop(1, c2);
+    g.fillStyle = gr; g.beginPath(); g.moveTo(x - wd / 2, h);
+    g.quadraticCurveTo(x + lean * 0.45 - wd * 0.2, h - ht * 0.55, x + lean, h - ht);
+    g.quadraticCurveTo(x + lean * 0.45 + wd * 0.25, h - ht * 0.5, x + wd / 2, h); g.fill();
+  };
+  const rgb = (c, k) => `rgb(${c[0] * k | 0},${c[1] * k | 0},${c[2] * k | 0})`;
+  for (let i = 0; i < 240; i++) {
+    const x = 6 + TR() * (w - 12), ht = h * (0.3 + Math.pow(TR(), 0.65) * 0.66), lean = (TR() - 0.5) * 100, wd = 2 + TR() * 3.4, k = 0.75 + TR() * 0.5;
+    if (TR() < 0.13) blade(x, ht, lean, wd, rgb([66, 58, 32], k), rgb([128, 112, 66], k), rgb([176, 158, 104], k));
+    else blade(x, ht, lean, wd, rgb([28, 40, 18], k), rgb([62, 84, 34], k), rgb([112, 128, 62], k));
+  }
+  for (let i = 0; i < 9; i++) {            // a few seed heads above the blades
+    const x = 20 + TR() * (w - 40), top = h * (0.04 + TR() * 0.12), lean = (TR() - 0.5) * 40;
+    g.strokeStyle = 'rgb(120,116,70)'; g.lineWidth = 1.2; g.beginPath(); g.moveTo(x, h); g.quadraticCurveTo(x + lean * 0.4, h * 0.5, x + lean, top); g.stroke();
+    g.fillStyle = 'rgb(156,140,92)'; for (let k = 0; k < 6; k++) { g.beginPath(); g.ellipse(x + lean + (TR() - 0.5) * 4, top + k * 4, 1.6, 3.2, (TR() - 0.5) * 0.8, 0, 6.28); g.fill(); }
+  }
+}));
+grassBladeTex2.wrapS = grassBladeTex2.wrapT = THREE.ClampToEdgeWrapping;
+const GS = 0.42, GR = isTouch ? 24 : 40, GMAP = new THREE.Vector4(-172, -172, 344, 344), GMN = 256;
+// terrain height (16 bits in red/green) and grass mask (tint in rgb, density in alpha) around the valley
+const heightTex = (() => {
+  const N = GMAP.w, d = new Uint8Array(N * N * 4), st = GMAP.z / (N - 1);
+  for (let k = 0; k < N; k++) for (let i = 0; i < N; i++) {
+    const v = Math.round(clamp((meshH(GMAP.x + i * st, GMAP.y + k * st) + 20) / 80, 0, 1) * 65535), o = (k * N + i) * 4;
+    d[o] = v >> 8; d[o + 1] = v & 255; d[o + 2] = 0; d[o + 3] = 255;
+  }
+  const t = new THREE.DataTexture(d, N, N, THREE.RGBAFormat); t.needsUpdate = true; return t;
+})();
+const maskTex = (() => {
+  const N = GMN, d = new Uint8Array(N * N * 4), st = GMAP.z / N, houses = colliders.filter(c => c.t === 'b' && (c.x1 - c.x0) * (c.z1 - c.z0) > 4);
+  for (let k = 0; k < N; k++) for (let i = 0; i < N; i++) {
+    const x = GMAP.x + (i + 0.5) * st, z = GMAP.y + (k + 0.5) * st, h = meshH(x, z);
+    let gm = groundPaint(x, z, h, terrainNormal(x, z).y, _gc);
+    if (h < WATER_Y + 0.35) gm = 0;
+    for (const c of houses) if (x > c.x0 - 0.6 && x < c.x1 + 0.6 && z > c.z0 - 0.6 && z < c.z1 + 0.6) { gm = 0; break; }
+    const o = (k * N + i) * 4;
+    d[o] = clamp(_gc.r / 2, 0, 1) * 255; d[o + 1] = clamp(_gc.g / 2, 0, 1) * 255; d[o + 2] = clamp(_gc.b / 2, 0, 1) * 255; d[o + 3] = gm * 255;
+  }
+  const t = new THREE.DataTexture(d, N, N, THREE.RGBAFormat); t.magFilter = t.minFilter = THREE.LinearFilter; t.needsUpdate = true; return t;
+})();
+const GU = { time: timeU, uSnap: { value: new THREE.Vector2() }, uCam: { value: new V3() }, uRad: { value: GR }, uS: { value: GS }, uH: { value: heightTex }, uM: { value: maskTex }, uMap: { value: GMAP } };
+const grassMat = new THREE.MeshLambertMaterial({ map: grassBladeTex2, alphaTest: 0.36, side: THREE.DoubleSide });
+grassMat.onBeforeCompile = sh => {
+  Object.assign(sh.uniforms, GU);
+  sh.vertexShader = `uniform float time; uniform vec2 uSnap; uniform vec3 uCam; uniform float uRad; uniform float uS; uniform sampler2D uH; uniform sampler2D uM; uniform vec4 uMap;
+attribute vec2 aGrid; varying vec3 vTint;
+float gh( vec2 p ) { return fract( sin( dot( p, vec2( 127.1, 311.7 ) ) ) * 43758.5453 ); }
+float hAt( vec2 t ) { vec4 c = texture2D( uH, ( t + 0.5 ) / uMap.w ); return ( c.r * 65280.0 + c.g * 255.0 ) / 65535.0 * 80.0 - 20.0; }
+float groundY( vec2 w ) { vec2 t = ( w - uMap.xy ) / uMap.z * ( uMap.w - 1.0 ); vec2 i = floor( t ); vec2 f = t - i;
+  return mix( mix( hAt( i ), hAt( i + vec2( 1.0, 0.0 ) ), f.x ), mix( hAt( i + vec2( 0.0, 1.0 ) ), hAt( i + vec2( 1.0, 1.0 ) ), f.x ), f.y ); }
+` + sh.vertexShader.replace('#include <begin_vertex>', `
+  vec2 gi = floor( ( aGrid + uSnap ) / uS + 0.5 );
+  vec2 gw = gi * uS + ( vec2( gh( gi ), gh( gi + 17.3 ) ) - 0.5 ) * uS * 0.95;
+  vec4 msk = texture2D( uM, ( gw - uMap.xy ) / uMap.z );
+  float dist = length( gw - uCam.xz );
+  float an = gh( gi + 3.1 ) * 6.2832, ca = cos( an ), sa = sin( an );
+  float edge = smoothstep( 0.3, 0.62, msk.a + ( gh( gi + 5.5 ) - 0.5 ) * 0.45 );     // thins and shortens toward paths and bare ground
+  float sc = ( 0.72 + 0.55 * gh( gi + 9.7 ) ) * step( 0.02, edge ) * ( 1.0 - smoothstep( uRad * 0.78, uRad, dist ) ) * step( abs( gw.x - uMap.x - uMap.z * 0.5 ), uMap.z * 0.5 - 2.0 ) * step( abs( gw.y - uMap.y - uMap.z * 0.5 ), uMap.z * 0.5 - 2.0 );
+  vec3 bp = position * vec3( 0.55 + 0.45 * edge, ( 0.7 + 0.7 * gh( gi + 2.2 ) * msk.a ) * edge, 0.55 + 0.45 * edge );
+  bp = vec3( bp.x * ca - bp.z * sa, bp.y, bp.x * sa + bp.z * ca ) * sc;
+  float sway = ( sin( time * 1.7 + gw.x * 0.35 + gw.y * 0.25 ) + 0.5 * sin( time * 3.3 + gw.x * 0.9 + gw.y * 0.4 ) ) * 0.08 * position.y;
+  bp.x += sway; bp.z += sway * 0.6;
+  vec3 transformed = vec3( gw.x, groundY( gw ) - 0.04, gw.y ) + bp;
+  vTint = msk.rgb * 2.0 * ( 0.8 + 0.4 * gh( gi + 4.4 ) );`).replace('#include <lights_lambert_vertex>', '#include <lights_lambert_vertex>\n#ifdef DOUBLE_SIDED\n vLightBack = vLightFront; vIndirectBack = vIndirectFront;\n#endif');
+  sh.fragmentShader = 'varying vec3 vTint;\n' + sh.fragmentShader.replace('#include <color_fragment>', '#include <color_fragment>\n diffuseColor.rgb *= vTint;');
+};
+const grassGeo = (() => {
+  const pos = [], nrm = [], uv = [], idx = [];
+  for (let k = 0; k < 3; k++) {
+    const a = k / 3 * Math.PI + (TR() - 0.5) * 0.4, o = new V3((TR() - 0.5) * 0.12, 0, (TR() - 0.5) * 0.12), rx = Math.cos(a) * 0.3, rz = Math.sin(a) * 0.3, ht = 0.42 + TR() * 0.12, b = k * 4;
+    for (const [sx, sy] of [[-1, 0], [1, 0], [1, 1], [-1, 1]]) { pos.push(o.x + rx * sx, sy * ht, o.z + rz * sx); nrm.push(0, 1, 0); uv.push((sx + 1) / 2, sy); }
+    idx.push(b, b + 1, b + 2, b, b + 2, b + 3);
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('normal', new THREE.Float32BufferAttribute(nrm, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx);
+  return g;
+})();
+const GN = [];
+{ const M = Math.ceil(GR / GS) + 1; for (let i = -M; i <= M; i++) for (let k = -M; k <= M; k++) { const d = Math.hypot(i, k) * GS; if (d <= GR + GS) GN.push([d, i * GS, k * GS]); } GN.sort((a, b) => a[0] - b[0]); }
+{ const ag = new Float32Array(GN.length * 2); GN.forEach(([, x, z], i) => { ag[i * 2] = x; ag[i * 2 + 1] = z; }); grassGeo.setAttribute('aGrid', new THREE.InstancedBufferAttribute(ag, 2)); }
+const grass = new THREE.InstancedMesh(grassGeo, grassMat, GN.length);
+{ const I4 = new THREE.Matrix4(); for (let i = 0; i < GN.length; i++) grass.setMatrixAt(i, I4); }
+grass.userData.full = GN.length;
+if (renderer.capabilities.maxVertexTextures < 2) { grass.visible = false; }
+grass.onBeforeRender = (r, sc, cam) => {
+  GU.uCam.value.copy(cam.position);
+  GU.uSnap.value.set(Math.floor(cam.position.x / GS) * GS, Math.floor(cam.position.z / GS) * GS);
+  GU.uRad.value = GN[Math.max(0, Math.min(GN.length, grass.count) - 1)][0];
+};
+grass.receiveShadow = true; grass.castShadow = false; grass.frustumCulled = false; scene.add(grass);
 const solids = [...terrainChunks, ...solidMeshes, rocks, ...treeTrunks];
 
 /* ================= Collision, ground and line of sight ================= */
