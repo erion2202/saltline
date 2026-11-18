@@ -133,6 +133,10 @@ h2{margin:0;font-family:var(--display);font-weight:800;font-size:clamp(46px,8vw,
 #tJump{width:62px;height:62px;right:calc(132px + env(safe-area-inset-right,0px));bottom:calc(30px + env(safe-area-inset-bottom,0px))}
 #tReload{width:56px;height:56px;right:calc(40px + env(safe-area-inset-right,0px));bottom:calc(140px + env(safe-area-inset-bottom,0px))}
 #tAds{width:56px;height:56px;right:calc(118px + env(safe-area-inset-right,0px));bottom:calc(112px + env(safe-area-inset-bottom,0px))}
+.slots{display:flex;gap:6px;margin-bottom:6px;font-size:11px;letter-spacing:.12em;text-transform:uppercase}
+.slots span{padding:2px 7px;border:1px solid rgba(241,232,218,.35);opacity:.55}
+.slots span.on{opacity:1;border-color:var(--apricot);color:var(--apricot)}
+#tSwap{width:56px;height:56px;right:calc(118px + env(safe-area-inset-right,0px));bottom:calc(180px + env(safe-area-inset-bottom,0px))}
 #tCrouch{width:56px;height:56px;right:calc(28px + env(safe-area-inset-right,0px));bottom:calc(208px + env(safe-area-inset-bottom,0px))}
 #tPause{position:fixed;z-index:6;top:calc(12px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);width:44px;height:44px;border-radius:50%;
   border:1px solid rgba(241,232,218,.45);background:rgba(22,18,29,.4);color:var(--salt);font:600 14px var(--mono)}
@@ -162,7 +166,7 @@ body.touch #feed{display:none}
   </div>
   <div class="corner tr" id="feed"></div>
   <div class="corner bl"><div class="lbl" id="hpLbl">Health</div><div class="bar" id="hpBar"><i id="hpFill"></i></div><div class="sub" id="hpNum">100</div></div>
-  <div class="corner br"><div class="lbl" id="ammoLbl">Rounds</div><div class="big"><span id="hAmmo">30</span><small>/30</small></div></div>
+  <div class="corner br"><div class="slots"><span id="sl1" class="on">1 Rifle</span><span id="sl2">2 Knife</span></div><div class="lbl" id="ammoLbl">Rounds</div><div class="big" id="ammoBig"><span id="hAmmo">30</span><small>/30</small></div></div>
   <div id="cross"><i></i><i></i><i></i><i></i></div>
   <div id="dmg"></div>
   <div id="hitmark"></div>
@@ -183,6 +187,7 @@ body.touch #feed{display:none}
   <div class="tbtn" id="tReload">Rld</div>
   <div class="tbtn" id="tAds">Aim</div>
   <div class="tbtn" id="tCrouch">Crch</div>
+  <div class="tbtn" id="tSwap">Swap</div>
   <div class="tbtn" id="tJump">Jump</div>
   <div class="tbtn" id="tFire">Fire</div>
 </div>
@@ -213,6 +218,7 @@ body.touch #feed{display:none}
       <b>Left click · F · J</b><span>Fire. F and J work even when the touchpad stops responding while you move</span>
       <b>Right click · Q</b><span>Aim down the red dot (Q toggles it)</span>
       <b>C</b><span>Crouch · press while sprinting to slide</span>
+      <b>1 · 2</b><span>Rifle · knife (50 damage per hit)</span>
       <b>R · Tab · Esc</b><span>Reload · scoreboard · pause</span>
     </div>
     <div class="keys" id="keysTouch" hidden>
@@ -346,6 +352,9 @@ const sfx = (() => {
       tone(b, 'sine', 140, 38, 0.14, 0.9);
       if (near) { tone(b, 'square', 2600, 2400, 0.012, 0.06, 0.03); hiss(b, 'bandpass', 4200, 3000, 0.02, 0.12, 4, 0.045); }
     },
+    swish() { if (!ok()) return; hiss(bus(0.55, 12000, 0.25, 0.08), 'bandpass', 700, 3400, 0.17, 0.55, 1.3); },
+    stab() { if (!ok()) return; const b = bus(0.8, 6000, 0.1, 0.15); hiss(b, 'lowpass', 1400, 180, 0.1, 0.75); tone(b, 'sine', 140, 55, 0.12, 0.5); },
+    draw() { if (!ok()) return; hiss(bus(0.4, 14000, 0.3, 0.1), 'bandpass', 3800, 6500, 0.14, 0.3, 6); },
     hit(crit) { if (!ok()) return; const b = bus(0.9); tone(b, 'square', crit ? 1700 : 1050, crit ? 2100 : 1200, 0.045, 0.07); if (crit) tone(b, 'sine', 3200, 3000, 0.08, 0.06, 0.01); },
     kill() { if (!ok()) return; const b = bus(0.9); tone(b, 'triangle', 660, 660, 0.08, 0.12); tone(b, 'triangle', 990, 990, 0.12, 0.1, 0.07); },
     hurt() { if (!ok()) return; const b = bus(0.8, 3000); hiss(b, 'lowpass', 900, 200, 0.18, 0.35); tone(b, 'sine', 90, 50, 0.2, 0.3); },
@@ -1825,6 +1834,97 @@ const LH = {};
     }
   }, () => {});
 })();
+let weapon = 1, equipT = 1, swingT = -1, swingHit = false, knifeHand = null, autoDist = 99;
+const knifeG = new THREE.Group(); knifeG.visible = false; gunCam.add(knifeG);
+{
+  const steel = new THREE.MeshStandardMaterial({ color: 0xb8bcc2, metalness: 1, roughness: 0.24, envMapIntensity: 1.6 });
+  const coat = new THREE.MeshStandardMaterial({ color: 0x2b2c2e, metalness: 0.7, roughness: 0.42 });
+  const handleMat = VM.poly;
+  fixMat(steel); fixMat(coat);
+  const kn = new THREE.Group();                         // local +Y = blade direction, origin at the guard
+  // blade: drop point, black-coated flats with a bright ground edge
+  const sh = new THREE.Shape();
+  sh.moveTo(-0.0075, 0); sh.lineTo(0.0165, 0); sh.lineTo(0.0175, 0.1);
+  sh.quadraticCurveTo(0.017, 0.15, 0.0, 0.182); sh.quadraticCurveTo(-0.004, 0.17, -0.0075, 0.15); sh.closePath();
+  const bg = new THREE.ExtrudeGeometry(sh, { depth: 0.0018, bevelEnabled: true, bevelThickness: 0.0014, bevelSize: 0.0016, bevelSegments: 1, curveSegments: 10 });
+  bg.translate(0, 0, -0.0009); bg.rotateY(Math.PI / 2);
+  const blade = new THREE.Mesh(bg, [coat, steel]); kn.add(blade);
+  const fuller = new THREE.Mesh(new THREE.BoxGeometry(0.0052, 0.08, 0.004), coat); fuller.position.set(0, 0.06, 0.0005); kn.add(fuller);
+  const guard = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.007, 0.05), steel); guard.position.y = -0.002; kn.add(guard);
+  const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.0118, 0.013, 0.112, 14), handleMat); handle.position.y = -0.062; handle.scale.z = 1.25; kn.add(handle);
+  for (let i = 0; i < 4; i++) { const ring = new THREE.Mesh(new THREE.TorusGeometry(0.0128, 0.0018, 6, 18), coat); ring.rotation.x = Math.PI / 2; ring.position.y = -0.022 - i * 0.022; ring.scale.y = 1.25; kn.add(ring); }
+  const pommel = new THREE.Mesh(new THREE.CylinderGeometry(0.0115, 0.0135, 0.014, 14), steel); pommel.position.y = -0.124; pommel.scale.z = 1.2; kn.add(pommel);
+  // sit the handle in the pistol-grip hand pose: same spot and angle as the rifle's grip
+  const top = gp(-0.012, -0.034), bot = gp(-0.05, -0.128), axis = top.clone().sub(bot).normalize();
+  kn.position.copy(top.clone().add(bot).multiplyScalar(0.5)).addScaledVector(axis, 0.062);
+  kn.quaternion.setFromUnitVectors(new V3(0, 1, 0), axis).multiply(new THREE.Quaternion().setFromAxisAngle(new V3(0, 1, 0), Math.PI));
+  knifeG.add(kn);
+  kn.traverse(o => { if (o.isMesh) { o.castShadow = o.receiveShadow = true; o.frustumCulled = false; } });
+  // forearm from the hand's wrist to an elbow off-screen
+  const rhP = gp(-0.012, -0.078, 0.03), rhQ = new THREE.Quaternion().setFromAxisAngle(new V3(1, 0, 0), 0.3).multiply(new THREE.Quaternion().setFromAxisAngle(new V3(0, 0, 1), -Math.PI / 2));
+  const wrist = new V3(0, 0.002, 0.062).applyQuaternion(rhQ).add(rhP);
+  const arm = limb(wrist, gp(-0.44, -0.3, 0.17), 0.036, 0.05, VM.sleeve, knifeG); arm.castShadow = true; arm.frustumCulled = false;
+}
+function equipKnifeHand() {
+  if (knifeHand) knifeG.remove(knifeHand);
+  if (!arms[0]) return;
+  knifeHand = arms[0].hand.clone(); knifeG.add(knifeHand);
+  knifeHand.traverse(o => { if (o.isMesh) o.frustumCulled = false; });
+}
+function switchWeapon(n) {
+  if (n === weapon || !me.alive) return;
+  weapon = n; equipT = 0; swingT = -1; adsToggle = false; adsHeld = false; reload = null;
+  if (n === 2) { equipKnifeHand(); sfx.draw(); } else sfx.charge();
+}
+function startSwing() { swingT = 0; swingHit = false; sfx.swish(); }
+const _kf = new V3(), _kr = new V3(), _ku = new V3(), _kd = new V3();
+function knifeHit() {
+  camera.updateMatrixWorld();
+  camera.getWorldDirection(_kf); _kr.setFromMatrixColumn(camera.matrixWorld, 0); _ku.setFromMatrixColumn(camera.matrixWorld, 1);
+  const targets = solids.slice();
+  for (const e of ents.values()) if (e.alive) for (const m of e.model.hit) targets.push(m);
+  let hitEnt = null, hitPoint = null, wall = null;
+  // a fan of short rays across the slash, so a swing that clips someone counts
+  outer: for (const po of [0, -0.16, 0.12]) for (const yo of [0, 0.2, -0.2, 0.4, -0.4]) {
+    _kd.copy(_kf).addScaledVector(_kr, Math.sin(yo)).addScaledVector(_ku, Math.sin(po)).normalize();
+    ray.set(camera.position, _kd); ray.far = 2.3;
+    const h = ray.intersectObjects(targets, false)[0];
+    if (!h) continue;
+    const ent = h.object.userData.ent;
+    if (ent && ent.alive && ent !== me) { hitEnt = ent; hitPoint = h.point; break outer; }
+    if (!wall && yo === 0 && po === 0) wall = h;
+  }
+  if (hitEnt) {
+    applyDamage(hitEnt, 50, me.id, false);
+    hitmarkT = 0.18; $('hitmark').className = 'on';
+    sfx.stab(); shake = Math.max(shake, 0.12);
+    burst(hitPoint, 6, PM.grit, 2.5, 0.03, 0.4, 10, 0.3);
+  } else if (wall) {
+    impactFX(wall.point, surfaceNormal(wall, vN), wall.object.userData.surface, wall.distance, 0);
+    shake = Math.max(shake, 0.08);
+  }
+}
+// keyframes for the slash: idle -> wind-up (back, to the right) -> slash (across, down-left) -> recover
+const KW = { p: new V3(0.06, 0.05, 0.01), r: new V3(0.22, 0.32, -0.42) }, KS = { p: new V3(-0.2, -0.05, -0.11), r: new V3(-0.28, -0.42, 0.7) };
+function updateKnife(dt, bobAmt, sprintAmt) {
+  if (swingT >= 0) {
+    swingT += dt / 0.44;
+    if (!swingHit && swingT > 0.36) { swingHit = true; knifeHit(); }
+    if (swingT >= 1) swingT = -1;
+  }
+  const t = swingT < 0 ? 1 : swingT, sm = x => { x = clamp(x, 0, 1); return x * x * (3 - 2 * x); };
+  const wW = t < 0.22 ? sm(t / 0.22) : t < 0.42 ? 1 - sm((t - 0.22) / 0.2) : 0;
+  const wS = t < 0.22 ? 0 : t < 0.42 ? sm((t - 0.22) / 0.2) : 1 - sm((t - 0.42) / 0.58);
+  const eq = 1 - Math.pow(1 - equipT, 3);
+  knifeG.position.set(
+    0.115 + KW.p.x * wW + KS.p.x * wS + Math.cos(bobT * 0.5) * 0.012 * bobAmt + vm.swayX,
+    -0.088 + KW.p.y * wW + KS.p.y * wS - Math.abs(Math.sin(bobT * 0.5)) * 0.012 * bobAmt + vm.swayY - (1 - eq) * 0.26 - sprintAmt * 0.03,
+    -0.31 + KW.p.z * wW + KS.p.z * wS);
+  knifeG.rotation.set(
+    -0.72 + KW.r.x * wW + KS.r.x * wS + (1 - eq) * 0.9 - sprintAmt * 0.2,
+    0.18 + KW.r.y * wW + KS.r.y * wS + sprintAmt * 0.3,
+    0.12 + KW.r.z * wW + KS.r.z * wS + Math.sin(bobT * 0.5) * 0.03 * bobAmt);
+}
 const HIP = { p: new V3(0.12, -0.14, -0.27), ry: 0.04 };
 const ADS = { p: new V3(0, -SIGHT_U, -0.06) };
 const casings = [];
@@ -2017,7 +2117,7 @@ store.set('color', me.color);
 const ents = new Map();
 let state = 'menu', inGame = false;
 let ammo = MAG, reload = null, fireCD = 0, bloom = 0, spray = 0, recoilDebt = 0, sinceShot = 9, shake = 0, punch = 0, vpunch = 0, hurtFlash = 0;
-let crouchHeld = false, crouchT = 0, slideT = 0, cPressed = false;
+let crouchHeld = false, crouchT = 0, slideT = 0, slideVel = 0, cPressed = false;
 const slideDir2 = new V3();
 let bobT = 0, lastStride = 0, lastHurt = 9, deathT = 0, spawnProt = 0, adsHeld = false, adsToggle = false, hitmarkT = 0, killMsgT = 0, time = 0;
 const keys = new Set();
@@ -2035,7 +2135,7 @@ function makeSoldierEnt(id, kind, name, color, local) {
   const model = buildSoldier(color, name);
   scene.add(model.root);
   const e = { id, kind, name, color, local, model, pos: new V3(), vel: new V3(), yaw: 0, pitch: 0, hp: 100, alive: true, k: 0, d: 0, dc: 0, kb: null,
-    sq: 0, se: [0, 0, 0], walk: 0, lastStep: 0, deadT: 0, flashT: 0, tp: new V3(), tyaw: 0, tpitch: 0, lastDc: 0, lastSq: 0, ai: null };
+    sq: 0, se: [0, 0, 0], tst: 0, stance: 0, walk: 0, lastStep: 0, deadT: 0, flashT: 0, tp: new V3(), tyaw: 0, tpitch: 0, lastDc: 0, lastSq: 0, ai: null };
   fixTree(model.root);
   for (const m of model.hit) m.userData.ent = e;
   ents.set(id, e); knownNames.set(id, name);
@@ -2300,6 +2400,31 @@ function animateSoldier(e, dt) {
   m.head.rotation.x = e.pitch * 0.15 + 0.1 * sf * a;
   m.rifle.position.y = 0.36 + Math.sin(ph * 2) * 0.012 * a + breathe * 0.5;
   m.rifle.rotation.x = Math.sin(ph * 2 + 0.6) * 0.03 * a;
+  if (e.kind === 'remote') {
+    const kw = e.tw === 2;
+    m.rifle.visible = !kw;
+    if (kw && !m.knife) {
+      m.knife = new THREE.Group();
+      const bl = new THREE.Mesh(new THREE.BoxGeometry(0.005, 0.03, 0.17), SM.gunDark); bl.position.z = -0.1; m.knife.add(bl);
+      const hd = new THREE.Mesh(new THREE.BoxGeometry(0.024, 0.03, 0.1), SM.strap); hd.position.z = 0.03; m.knife.add(hd);
+      m.knife.position.set(0.1, 0.3, -0.06); m.spine.add(m.knife);
+    }
+    if (m.knife) m.knife.visible = kw;
+  }
+  // crouch and slide poses, smoothed toward the stance the player broadcast (0 stand, 1 crouch, 2 slide)
+  const tst = e.kind === 'bot' ? 0 : (e.tst || 0);
+  e.stance = (e.stance || 0) + (tst - (e.stance || 0)) * Math.min(1, dt * 9);
+  const cr2 = clamp(e.stance, 0, 1), sl2 = clamp(e.stance - 1, 0, 1);
+  if (cr2 > 0.02) {
+    m.hips.position.y -= cr2 * 0.3 + sl2 * 0.24;
+    m.spine.rotation.x += -cr2 * 0.3 + sl2 * 0.8;                       // hunch when crouched, lean back in a slide
+    m.head.rotation.x += cr2 * 0.25 - sl2 * 0.45;
+    for (const leg of m.legs) {
+      leg.hip.rotation.x += -cr2 * 0.95 - sl2 * (leg.side > 0 ? 0.6 : 0.25);   // slide: legs thrown out ahead
+      leg.knee.rotation.x += -cr2 * 1.25 + sl2 * (leg.side > 0 ? 1.15 : 0.75);
+      leg.ankle.rotation.x += cr2 * 0.5 - sl2 * 0.3;
+    }
+  }
   if (e.flashT > 0) { e.flashT -= dt; m.flash.visible = true; m.flash.rotation.z = Math.random() * 6; } else m.flash.visible = false;
   const step = Math.floor(e.walk / Math.PI);
   if (step !== e.lastStep) { e.lastStep = step; if (a > 0.4) { const d = e.pos.distanceTo(camera.position); if (d < 24) sfx.step(d, panOf(e.pos)); } }
@@ -2389,7 +2514,7 @@ function applyRemote(rec, pr) {
     }
     e.tp.set(+pr.p[0] || 0, +pr.p[1] || 0, +pr.p[2] || 0);
     if (Array.isArray(pr.r)) { e.tyaw = +pr.r[0] || 0; e.tpitch = +pr.r[1] || 0; }
-    e.hp = +pr.hp || 0; e.alive = !!pr.al; e.k = pr.k | 0; e.d = pr.d | 0;
+    e.hp = +pr.hp || 0; e.alive = !!pr.al; e.k = pr.k | 0; e.d = pr.d | 0; e.tst = pr.st | 0; e.tw = pr.w | 0;
     if (nm !== e.name) { e.name = nm; setSoldierName(e.model, nm); }
     if ((pr.dc | 0) > e.lastDc) { e.lastDc = pr.dc | 0; onDeath(e, String(pr.kb), false); }
     if ((pr.sq | 0) !== e.lastSq) { e.lastSq = pr.sq | 0; remoteShot(e, pr.se); }
@@ -2440,6 +2565,7 @@ function publish(now) {
   if (inGame) {
     Object.assign(pr, {
       jt: myJt, p: [r2(player.pos.x), r2(player.pos.y), r2(player.pos.z)], r: [r3(player.yaw), r3(player.pitch)],
+      st: slideT > 0 ? 2 : crouchHeld ? 1 : 0, w: weapon,
       hp: Math.max(0, Math.round(me.hp)), al: me.alive ? 1 : 0, k: me.k, d: me.d, dc: me.dc, kb: me.kb, sq: me.sq, se: me.se, h: hitsOut,
       b: iAmHost ? [...ents.values()].filter(e => e.kind === 'bot').slice(0, 12).map(e => [e.id, e.name, e.color, r2(e.pos.x), r2(e.pos.y), r2(e.pos.z), r3(e.yaw), r3(e.pitch),
         Math.round(e.hp), e.alive ? 1 : 0, e.k, e.d, e.dc, e.kb, e.sq, e.se[0], e.se[1], e.se[2]]) : null,
@@ -2473,15 +2599,16 @@ function respawnMe() {
   const p = pickSpawn(me.id);
   player.pos.set(p.x, terrainH(p.x, p.z), p.z); player.vel.set(0, 0, 0);
   player.yaw = Math.atan2(p.x, p.z); player.pitch = 0;
-  me.hp = 100; me.alive = true; spawnProt = 1.5; ammo = MAG; reload = null; vm.boltLock = 0; recoilDebt = 0; deathT = 0;
+  swingT = -1; equipT = 1; me.hp = 100; me.alive = true; spawnProt = 1.5; ammo = MAG; reload = null; vm.boltLock = 0; recoilDebt = 0; deathT = 0;
   $('death').hidden = true;
 }
 function startReload() {
+  if (weapon !== 1) return;
   if (reload || ammo === MAG || !me.alive) return;
   const empty = ammo === 0;
   reload = { t: 0, dur: empty ? 3.3 : 2.6, empty, out: false, in: false, ch: false };
 }
-function adsActive() { return (adsHeld || adsToggle) && !reload && me.alive; }
+function adsActive() { return (adsHeld || adsToggle) && !reload && me.alive && weapon === 1; }
 function currentSpread() {
   const sp = Math.hypot(player.vel.x, player.vel.z) / 5;
   const a = vm.ads;
@@ -2555,7 +2682,7 @@ function updateAssist(dt) {
       const targets = solids.slice();
       for (const e of ents.values()) if (e.alive) for (const m of e.model.hit) targets.push(m);
       const h = ray.intersectObjects(targets, false)[0];
-      autoTarget = !!(h && h.object.userData.ent && h.object.userData.ent.alive);
+      autoTarget = !!(h && h.object.userData.ent && h.object.userData.ent.alive); autoDist = h ? h.distance : 99;
     }
   }
   if (!settings.assist) return;
@@ -2603,7 +2730,7 @@ function updatePlayer(dt) {
   }
   const il = Math.hypot(ix, iz); if (il > 1) { ix /= il; iz /= il; }
   if (canAct) updateAssist(dt);
-  const firing = canAct && (mouseDown || shotQueued || keys.has('KeyF') || keys.has('KeyJ') || touchFire.id !== null || (settings.autofire && autoTarget));
+  const firing = canAct && (mouseDown || shotQueued || keys.has('KeyF') || keys.has('KeyJ') || touchFire.id !== null || (settings.autofire && autoTarget && (weapon === 1 || autoDist < 2.2)));
   const ads = adsActive() && canAct;
   const sprinting = canAct && (keys.has('ShiftLeft') || keys.has('ShiftRight') || (touchMove.id !== null && il > 0.95 && iz > 0.7)) && iz > 0 && !ads && !firing && !reload;
   // C while sprinting on the ground: slide. C otherwise: toggle crouch. Jumping stands you back up.
@@ -2611,7 +2738,7 @@ function updatePlayer(dt) {
     cPressed = false;
     const hsp = Math.hypot(player.vel.x, player.vel.z);
     if (canAct && slideT <= 0 && sprinting && player.onGround && hsp > 5.5) {
-      slideT = 0.85; slideDir2.set(player.vel.x / hsp, 0, player.vel.z / hsp); crouchHeld = false;
+      slideT = 1; slideVel = hsp + 2.6; slideDir2.set(player.vel.x / hsp, 0, player.vel.z / hsp); crouchHeld = false;
       sfx.step(0.6, 0); vm.vkrz += 2.5;
     } else if (canAct) crouchHeld = !crouchHeld;
   }
@@ -2619,13 +2746,15 @@ function updatePlayer(dt) {
   const sliding = slideT > 0;
   const crouched = (crouchHeld || sliding) && me.alive;
   crouchT += ((crouched ? 1 : 0) - crouchT) * Math.min(1, dt * 10);
-  const speed = sliding ? 0 : crouchHeld ? (ads ? 2.0 : 2.8) : ads ? 3.2 : sprinting ? 7.8 : 5.2;
+  const speed = (sliding ? 0 : crouchHeld ? (ads ? 2.0 : 2.8) : ads ? 3.2 : sprinting ? 7.8 : 5.2) * (weapon === 2 ? 1.08 : 1);
   const sy = Math.sin(player.yaw), cy = Math.cos(player.yaw);
   const wx = -sy * iz + cy * ix, wz = -cy * iz - sy * ix;
   if (sliding) {
-    slideT -= dt;
-    const sp2 = 3.2 + 8.2 * Math.max(0, slideT / 0.85);         // fast at first, bleeding off
-    player.vel.x = slideDir2.x * sp2; player.vel.z = slideDir2.z * sp2;
+    // the ground's slope along the slide direction: downhill feeds the slide, flat and uphill bleed it
+    const drop = (terrainH(player.pos.x, player.pos.z) - terrainH(player.pos.x + slideDir2.x * 1.4, player.pos.z + slideDir2.z * 1.4)) / 1.4;
+    slideVel = clamp(slideVel + (drop * 26 - 5.2) * dt, 0, 17);
+    player.vel.x = slideDir2.x * slideVel; player.vel.z = slideDir2.z * slideVel;
+    if (slideVel < 3.1) slideT = 0;
   } else {
     const k = Math.min(1, dt * (player.onGround ? 11 : 2.5));
     player.vel.x += (wx * speed - player.vel.x) * k;
@@ -2662,7 +2791,8 @@ function updatePlayer(dt) {
     if (u >= 1) { reload = null; vm.boltLock = 0; }
   }
   if (firing) vm.sprint = Math.min(vm.sprint, 0.2);
-  if (firing && fireCD <= 0 && !reload) {
+  if (weapon === 2) { if (firing && swingT < 0 && equipT > 0.6) startSwing(); shotQueued = false; }
+  else if (firing && fireCD <= 0 && !reload && equipT > 0.7) {
     if (ammo > 0) shoot(); else { fireCD = 0.3; sfx.empty(); startReload(); }
     shotQueued = false;
   }
@@ -2726,6 +2856,11 @@ function updatePlayer(dt) {
     if (d.life <= 0) { gunScene.remove(d.m); droppedMags.splice(i, 1); }
   }
   updateArms();
+  equipT = Math.min(1, equipT + dt / 0.32);
+  const eqE = weapon === 1 ? 1 - Math.pow(1 - equipT, 3) : 1;
+  pos.y -= (1 - eqE) * 0.22; rx -= (1 - eqE) * 0.9;
+  gun.visible = weapon === 1; knifeG.visible = weapon === 2;
+  if (weapon === 2) updateKnife(dt, bobAmt, sp);
   gun.position.copy(pos);
   gun.rotation.set(rx, ry, rz);
   bolt.position.z = -0.1 + Math.max(vm.bolt, vm.boltLock) * 0.03;
@@ -2839,7 +2974,9 @@ window.addEventListener('keydown', e => {
     if (e.code === 'KeyR') startReload();
     if (e.code === 'KeyC' && !e.repeat) cPressed = true;
     if ((e.code === 'KeyF' || e.code === 'KeyJ') && !e.repeat) shotQueued = true;
-    if (e.code === 'KeyQ' && !e.repeat) adsToggle = !adsToggle;
+    if (e.code === 'KeyQ' && !e.repeat && weapon === 1) adsToggle = !adsToggle;
+    if (e.code === 'Digit1' || e.code === 'Numpad1') switchWeapon(1);
+    if (e.code === 'Digit2' || e.code === 'Numpad2') switchWeapon(2);
     if (e.code === 'Tab') { boardOpen = true; renderBoard(); $('board').hidden = false; }
     if (e.code === 'KeyP' || (e.code === 'Escape' && fallback)) pause();
     if (e.code === 'KeyM') sfx.toggle();
@@ -2887,6 +3024,7 @@ tLayer.addEventListener('touchstart', e => {
     else if (id === 'tReload') startReload();
     else if (id === 'tAds') { adsToggle = !adsToggle; $('tAds').classList.toggle('on', adsToggle); }
     else if (id === 'tCrouch') cPressed = true;
+    else if (id === 'tSwap') switchWeapon(weapon === 1 ? 2 : 1);
     else if (t.clientX < innerWidth * 0.45 && touchMove.id === null) {
       Object.assign(touchMove, { id: t.identifier, ox: t.clientX, oy: t.clientY, x: t.clientX, y: t.clientY });
       joy.hidden = false; joy.style.left = t.clientX + 'px'; joy.style.top = t.clientY + 'px'; joy.firstChild.style.transform = '';
@@ -2941,7 +3079,8 @@ function updateHUD(dt) {
   setText('hpLbl', spawnProt > 0 ? 'Spawn protection' : lastHurt > 4.5 && me.hp < 100 ? 'Recovering' : 'Health');
   setText('hAmmo', String(ammo).padStart(2, '0'));
   $('hAmmo').classList.toggle('empty', ammo === 0);
-  setText('ammoLbl', reload ? 'Reloading' : 'Rounds');
+  setText('ammoLbl', weapon === 2 ? 'Knife · 50 damage' : reload ? 'Reloading' : 'Rounds');
+  $('ammoBig').hidden = weapon === 2; $('sl1').classList.toggle('on', weapon === 1); $('sl2').classList.toggle('on', weapon === 2);
   $('ammoLbl').classList.toggle('reloading', !!reload);
   $('cross').classList.toggle('off', vm.ads > 0.5 || vm.sprint > 0.5 || !me.alive);
   $('cross').style.setProperty('--gap', (4 + currentSpread() * 520).toFixed(1) + 'px');
