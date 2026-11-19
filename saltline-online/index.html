@@ -4922,6 +4922,7 @@ function updateBotAI(e, dt) {
     const gh = terrainH(e.pos.x, e.pos.z), above = e.pos.y - gh;
     const vy = above > 42 ? -40 : -6;
     e.vel.y += (vy - e.vel.y) * Math.min(1, dt * 3);
+    if (!e.dropTo) e.dropTo = { x: e.pos.x, z: e.pos.z };                         // taken over mid-drop from another host
     const dx = e.dropTo.x - e.pos.x, dz = e.dropTo.z - e.pos.z, d = Math.hypot(dx, dz);
     const hv = d > 1 ? Math.min(d, above > 42 ? 14 : 7) : 0;
     e.vel.x = d > 1 ? dx / d * hv : 0; e.vel.z = d > 1 ? dz / d * hv : 0;
@@ -5211,9 +5212,11 @@ function wsRoom(url) {
   roomChecked = true;
   setTimeout(updateNetUI, 0);
 })();
-function activeRemotes() { let n = 0; for (const r of remotes.values()) if (r.last && r.last.pl && (!inGame || sameServer(r.last))) n++; return n; }
+function activeRemotes() { let n = 0; for (const r of remotes.values()) if (r.last && r.last.pl && liveRec(r) && (!inGame || sameServer(r.last))) n++; return n; }
 let myMatchMode = 1;
 function sameServer(pr) { return !!pr && (pr.gm || 1) === myMatchMode; }
+function liveRec(rec) { return !!rec && performance.now() - (rec.seen || 0) < 4000; }
+let hbN = 0;
 function processNet() {
   if (!net) return;
   let peers;
@@ -5227,12 +5230,13 @@ function processNet() {
     let rec = remotes.get(p.peer);
     if (!rec) { rec = { peer: p.peer, last: null, lastUid: null, fresh: true }; remotes.set(p.peer, rec); }
     if (rec.last !== pr) { rec.fresh = true; rec.last = pr; }
+    if (rec.hb !== pr.hb) { rec.hb = pr.hb; rec.seen = performance.now(); } else if (!rec.seen) rec.seen = performance.now();
   }
   for (const [id] of remotes) if (!seen.has(id)) { remotes.delete(id); const e = ents.get(id); if (e) removeEnt(e); removeOwnerBuilds(id); }
   // the host simulates the AI: whoever has been in the match longest
   let best = inGame ? { id: me.id, jt: myJt } : null;
   for (const rec of remotes.values()) {
-    const pr = rec.last; if (!pr.pl || !sameServer(pr)) continue;
+    const pr = rec.last; if (!pr.pl || !sameServer(pr) || !liveRec(rec)) continue;
     const jt = +pr.jt || 0;
     if (!best || jt < best.jt || (jt === best.jt && rec.peer < best.id)) best = { id: rec.peer, jt };
   }
@@ -5242,7 +5246,10 @@ function processNet() {
     iAmHost = nowHost;
     for (const e of ents.values()) if (e.kind === 'bot') { e.local = iAmHost; if (iAmHost) { initAI(e); e.ai.lastPos.copy(e.pos); } else e.ai = null; }
   }
-  for (const rec of remotes.values()) if (rec.fresh) { rec.fresh = false; applyRemote(rec, rec.last); }
+  for (const rec of remotes.values()) {
+    if (!liveRec(rec)) { const e = ents.get(rec.peer); if (e && e.kind === 'remote') removeEnt(e); rec.fresh = true; continue; }
+    if (rec.fresh) { rec.fresh = false; applyRemote(rec, rec.last); }
+  }
 }
 function applyRemote(rec, pr) {
   const id = rec.peer;
@@ -5308,7 +5315,7 @@ function applyBots(list) {
 function publish(now) {
   if (!net || now - lastPub < 50) return;
   lastPub = now;
-  const pr = { g: NET_TAG, n: me.name, c: me.color, pl: inGame ? 1 : 0 };
+  const pr = { g: NET_TAG, n: me.name, c: me.color, pl: inGame ? 1 : 0, hb: ++hbN };
   if (inGame) {
     Object.assign(pr, {
       jt: myJt, p: [r2(player.pos.x), r2(player.pos.y), r2(player.pos.z)], r: [r3(player.yaw), r3(player.pitch)],
@@ -6836,7 +6843,17 @@ document.addEventListener('pointerlockchange', () => {
 });
 document.addEventListener('pointerlockerror', onLockFail);
 $('shopClose').onclick = () => closeShop();
-document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); });
+let hiddenAt = 0, hiddenKickT = 0;
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    pause(); hiddenAt = performance.now();
+    clearTimeout(hiddenKickT); hiddenKickT = setTimeout(() => { if (document.hidden && inGame) afkKick(); }, AFK_LIMIT * 1000);
+  } else {
+    clearTimeout(hiddenKickT);
+    if (inGame && hiddenAt && performance.now() - hiddenAt > AFK_LIMIT * 1000) afkKick();
+    hiddenAt = 0;
+  }
+});
 window.addEventListener('blur', () => { keys.clear(); mouseDown = false; adsHeld = false; });
 
 window.addEventListener('keydown', e0 => {
