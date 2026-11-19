@@ -60,6 +60,14 @@ body{background:var(--ink);color:var(--salt);font-family:var(--mono);touch-actio
 .stats span{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--salt-dim)}
 .lprofile .net{max-width:none}
 #slotLabels{position:absolute;inset:0;pointer-events:none;z-index:1}
+#busHud{position:fixed;left:50%;top:18%;transform:translateX(-50%);z-index:30;text-align:center;pointer-events:none;font-size:18px;letter-spacing:.06em;text-shadow:0 2px 6px rgba(0,0,0,.9);color:#f1e8da}
+#busHud b{display:inline-block;font-family:var(--display);font-weight:900;font-size:44px;color:#f2a65a;margin:0 6px;vertical-align:middle}#busHud span{display:block;font-size:12px;letter-spacing:.14em;text-transform:uppercase;opacity:.8;margin-top:6px}
+body.cine *{visibility:hidden}body.cine canvas,body.cine #cineBars,body.cine #cineBars *{visibility:visible}
+#cineBars{position:fixed;inset:0;z-index:35;pointer-events:none;display:none}#cineBars.on{display:block}
+#cineBars i{position:absolute;left:0;right:0;height:11vh;background:#000;animation:cineIn .5s ease-out}#cineBars i:first-child{top:0}#cineBars i:nth-child(2){bottom:0}
+#cineBars b{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%) scale(.8);text-align:center;font-family:var(--display);font-weight:900;font-size:clamp(48px,11vw,130px);letter-spacing:.08em;text-transform:uppercase;color:#ffd84a;text-shadow:0 0 30px rgba(255,180,60,.7),0 4px 14px #000;opacity:0;transition:opacity .5s,transform .6s}
+#cineBars.win b{opacity:1;transform:translateY(-50%) scale(1)}
+@keyframes cineIn{from{height:0}to{height:11vh}}
 .lseason{display:flex;align-items:baseline;justify-content:space-between;margin:-16px -16px 2px;padding:10px 16px;background:linear-gradient(90deg,rgba(95,225,255,.22),rgba(95,225,255,.04));border-bottom:1px solid rgba(95,225,255,.3)}
 .lseason b{font-family:var(--display);font-weight:900;font-size:26px;text-transform:uppercase;letter-spacing:.02em}.lseason span{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--salt-dim)}
 .lvcard{display:flex;gap:12px;align-items:center}.lvbadge{width:62px;flex:none}.lvbadge svg{width:100%;display:block;filter:drop-shadow(0 3px 6px rgba(0,0,0,.5))}
@@ -2500,7 +2508,7 @@ const grassBladeTex2 = texFrom(makeCanvas(512, 256, (g, w, h) => {
   }
 }));
 grassBladeTex2.wrapS = grassBladeTex2.wrapT = THREE.ClampToEdgeWrapping;
-const GS = 0.42, GR = isTouch ? 24 : 40, GMAP = new THREE.Vector4(-86 * MS, -86 * MS, 172 * MS, 512), GMN = 384;
+const GS = 0.42, GR = isTouch ? 24 : 70, GMAP = new THREE.Vector4(-86 * MS, -86 * MS, 172 * MS, 512), GMN = 384;
 // terrain height (16 bits in red/green) and grass mask (tint in rgb, density in alpha) around the valley
 const heightTex = (() => {
   const N = GMAP.w, d = new Uint8Array(N * N * 4), st = GMAP.z / (N - 1);
@@ -2563,6 +2571,7 @@ const GN = [];
 { const M = Math.ceil(GR / GS) + 1; for (let i = -M; i <= M; i++) for (let k = -M; k <= M; k++) { const d = Math.hypot(i, k) * GS; if (d <= GR + GS) GN.push([d, i * GS, k * GS]); } GN.sort((a, b) => a[0] - b[0]); }
 { const ag = new Float32Array(GN.length * 2); GN.forEach(([, x, z], i) => { ag[i * 2] = x; ag[i * 2 + 1] = z; }); grassGeo.setAttribute('aGrid', new THREE.InstancedBufferAttribute(ag, 2)); }
 const grass = new THREE.InstancedMesh(grassGeo, grassMat, GN.length);
+function grassWant() { const r = [0, 20, 30, 40, 55, 70][clamp(settings.grass | 0, 0, 5)]; let lo = 0, hi = GN.length; while (lo < hi) { const mid = (lo + hi) >> 1; if (GN[mid][0] <= r) lo = mid + 1; else hi = mid; } return lo; }
 { const I4 = new THREE.Matrix4(); for (let i = 0; i < GN.length; i++) grass.setMatrixAt(i, I4); }
 grass.userData.full = GN.length;
 if (renderer.capabilities.maxVertexTextures < 2) { grass.visible = false; }
@@ -2592,10 +2601,10 @@ function pushOut(p, rad, bottom, step = 0) {
     }
   }
   const l = Math.hypot(p.x, p.z), lim = BOUND - rad;
-  if (l > lim) { p.x *= lim / l; p.z *= lim / l; }
+  if (l > lim && !(ISL && ISL.on && Math.hypot(p.x - ISL.x, p.z - ISL.z) < ISL.r + 40)) { p.x *= lim / l; p.z *= lim / l; }
 }
 function groundAt(x, z, y) {
-  let g = terrainH(x, z);
+  let g = Math.max(terrainH(x, z), islandH(x, z, y));
   for (const c of colliders) {
     if (c.noStand || c.top > y + 0.45) continue;
     if (c.t === 'c') { if (Math.hypot(x - c.x, z - c.z) < c.r * 0.85) g = Math.max(g, c.top); }
@@ -3768,10 +3777,10 @@ function poleWorld(m, x, y, z) { m.root.getWorldQuaternion(_qr); return _pole.se
 function animateSoldier2(e, dt) {
   const m = e.model, B = m.bones;
   e.deadT = e.alive ? 0 : (e.deadT || 0) + dt;
-  m.root.visible = e.alive || e.deadT < 14;
+  m.root.visible = (e.alive || e.deadT < 14) && !(e !== selfView && (e.onBus || busHideBot(e)));
   if (!m.root.visible) return;
   // drop: canopy while gliding (same as before)
-  const gnd = terrainH(e.pos.x, e.pos.z), above = e.pos.y - gnd, inAir = e.alive && e.dropping && above > 1.2;
+  const gnd = Math.max(terrainH(e.pos.x, e.pos.z), islandH(e.pos.x, e.pos.z, e.pos.y)), above = e.pos.y - gnd, inAir = e.alive && e.dropping && above > 1.2;
   const glideOn = e === selfView ? chuteOpen : above < 48, freefall = inAir && !glideOn, gliding = inAir && glideOn;
   if (gliding && !m.canopy) { m.canopy = makeCanopy(PAL[m.color % PAL.length]); m.root.add(m.canopy); }
   if (m.canopy) {
@@ -3821,7 +3830,7 @@ function animateSoldier2(e, dt) {
   m.root.position.copy(e.pos); m.root.rotation.set(0, e.yaw, 0); if (m.root.userData.blob) m.root.userData.blob.visible = e.alive && !e.dropping;
   m.fall = e.alive ? 0 : Math.min(1, m.fall + dt * 1.6);
   const f = 1 - Math.pow(1 - m.fall, 3);
-  if (freefall) m.root.rotation.x = 1.3 + Math.sin(time * 2.3 + m.color) * 0.04;
+  if (freefall) m.root.rotation.x = -1.3 + Math.sin(time * 2.3 + m.color) * 0.04;
   if (!e.alive) { m.root.rotation.x = -f * 1.45 * (m.deathSide > 0 ? 1 : 0.9); m.root.rotation.z = f * 0.35 * m.deathSide; m.root.position.y += -f * 0.05; }
   m.tag.visible = e.alive;
   for (const k of S2_BONES) B[k].quaternion.copy(m.rest[k]);
@@ -4647,8 +4656,9 @@ function soldierShadowLod() {
 }
 function emoteCancel() { if (selfView.emote && (Math.hypot(player.vel.x, player.vel.z) > 0.8 || mouseDown || !me.alive || buildMode || dropping)) selfView.emote = null; }
 function arsenalFrame(dt) {
+  gameT += dt; cineFrame();
   treeCull();
-  { const v = selfView.emote ? 'hidden' : ''; const c = $('cross'); if (c && c.style.visibility !== v) c.style.visibility = v; }
+  { const v = selfView.emote || onBus || CINE.on ? 'hidden' : ''; const c = $('cross'); if (c && c.style.visibility !== v) c.style.visibility = v; }
   updateBullets(dt);
   emoteCancel(); shieldHud();
   shadowLodT -= dt; if (shadowLodT <= 0) { shadowLodT = 0.5; soldierShadowLod(); }
@@ -5118,6 +5128,166 @@ function renderFill() {
 }
 function myTeamHumans() { let n = 1; for (const e of ents.values()) if (e.kind === 'remote' && e.team === myTeam) n++; return n; }
 
+/* ================= Spawn island, Battle Box, final-kill cinematic ================= */
+// Battle Royale matches start on a floating island (30 s, nobody can be hurt), then everyone boards the Battle Box,
+// a flying cargo container on four rotors, which crosses the map; Space jumps out. The phase follows the match clock,
+// which every client gets from the host, so all players see the same island, flight path and drop moment.
+const ISL_T = 30, BUS_V = 34;
+var ISL = { x: 0, z: 0, y: 0, r: 24, on: false, g: null };
+const BUS = { g: null, a: 0, s: new V3(), d: new V3(), L: 0, T: 0, pos: new V3(), rotors: [] };
+let onBus = false;
+function busPhaseLen() { return ISL_T + BUS.T; }
+function islandSetup() {
+  ISL.x = 0; ISL.z = -(BOUND + 95);
+  let top = -1e9; for (let i = 0; i < 24; i++) { const a = i / 24 * 6.283; for (const rr of [0, 12, 24]) top = Math.max(top, terrainH(ISL.x + Math.cos(a) * rr, ISL.z + Math.sin(a) * rr)); }
+  ISL.y = top + 55;
+  const g = new THREE.Group();
+  const grassM = new THREE.MeshStandardMaterial({ color: 0x5f7d3a, roughness: 1 }), dirtM = new THREE.MeshStandardMaterial({ color: 0x6e5a42, roughness: 1 });
+  const rockM = new THREE.MeshStandardMaterial({ color: 0x77736c, roughness: 0.95, flatShading: true });
+  [grassM, dirtM, rockM].forEach(fixMat);
+  const top_ = new THREE.Mesh(new THREE.CylinderGeometry(ISL.r, ISL.r * 0.97, 1.2, 56), grassM); top_.position.y = -0.6; top_.receiveShadow = true; g.add(top_);
+  const rim = new THREE.Mesh(new THREE.CylinderGeometry(ISL.r * 0.97, ISL.r * 0.9, 2.4, 56, 1, true), dirtM); rim.position.y = -2.4; g.add(rim);
+  const cg = new THREE.ConeGeometry(ISL.r * 0.9, 26, 40, 6); cg.rotateX(Math.PI); cg.translate(0, -16.6, 0);
+  { const p = cg.attributes.position; for (let i = 0; i < p.count; i++) { const x = p.getX(i), y = p.getY(i), z = p.getZ(i), n = Math.sin(x * 0.7 + y * 0.3) * Math.cos(z * 0.6 - y * 0.2); if (y < -4) { p.setX(i, x * (1 + n * 0.18)); p.setZ(i, z * (1 + n * 0.18)); } } cg.computeVertexNormals(); }
+  g.add(new THREE.Mesh(cg, rockM));
+  // a few trees, crates and a sign
+  const R = mulberry(4242);
+  for (let i = 0; i < 7; i++) {
+    const a = R() * 6.283, d = 12 + R() * 9, sp = SPECIES[i % 4], s = 0.45 + R() * 0.2;
+    const t = new THREE.Mesh(sp.trunk, treeBarkMat), l = new THREE.Mesh(sp.leaves, sp.mat);
+    for (const m of [t, l]) { m.position.set(Math.cos(a) * d, -0.2, Math.sin(a) * d); m.scale.setScalar(s); m.rotation.y = R() * 6; m.castShadow = true; g.add(m); }
+  }
+  for (let i = 0; i < 5; i++) { const c = new THREE.Mesh(new THREE.BoxGeometry(1.1, 1.1, 1.1), crateMat); const a = R() * 6.283, d = 6 + R() * 8; c.position.set(Math.cos(a) * d, 0.55, Math.sin(a) * d); c.rotation.y = R() * 3; c.castShadow = true; g.add(c); }
+  const signTex = new THREE.CanvasTexture(makeCanvas(512, 160, (c, w, h) => { c.fillStyle = '#1a1626'; c.fillRect(0, 0, w, h); c.strokeStyle = '#f2a65a'; c.lineWidth = 8; c.strokeRect(6, 6, w - 12, h - 12); c.fillStyle = '#f1e8da'; c.font = '900 62px sans-serif'; c.textAlign = 'center'; c.fillText('ONENIGHT', w / 2, 78); c.font = '600 28px sans-serif'; c.fillStyle = '#f2a65a'; c.fillText('spawn island · the Battle Box is coming', w / 2, 126); }));
+  signTex.encoding = THREE.sRGBEncoding;
+  const sign = new THREE.Mesh(new THREE.PlaneGeometry(6, 1.9), new THREE.MeshBasicMaterial({ map: signTex, toneMapped: false })); sign.position.set(0, 3.2, -10); g.add(sign);
+  for (const sx of [-2.8, 2.8]) { const post = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 3.4, 8), dirtM); post.position.set(sx, 1.7, -10.05); g.add(post); }
+  g.position.set(ISL.x, ISL.y, ISL.z); g.visible = false; scene.add(g); ISL.g = g;
+}
+function busModel() {
+  const g = new THREE.Group();
+  const orange = new THREE.MeshStandardMaterial({ color: 0xd8772a, roughness: 0.55, metalness: 0.35 }), dark = new THREE.MeshStandardMaterial({ color: 0x23202a, roughness: 0.5, metalness: 0.6 });
+  const glow = new THREE.MeshBasicMaterial({ color: 0xffd27a, toneMapped: false });
+  [orange, dark].forEach(fixMat);
+  const body = new THREE.Mesh(new THREE.BoxGeometry(3.6, 3.4, 11), orange); g.add(body);
+  for (let i = -5; i <= 5; i++) { const rib = new THREE.Mesh(new THREE.BoxGeometry(3.72, 3.1, 0.12), orange); rib.position.z = i * 1.0; g.add(rib); }
+  for (const z of [-5.55, 5.55]) { const f = new THREE.Mesh(new THREE.BoxGeometry(3.8, 3.6, 0.2), dark); f.position.z = z; g.add(f); }
+  const label = new THREE.CanvasTexture(makeCanvas(512, 96, (c, w, h) => { c.fillStyle = '#d8772a'; c.fillRect(0, 0, w, h); c.fillStyle = '#16121d'; c.font = '900 64px sans-serif'; c.textAlign = 'center'; c.fillText('BATTLE BOX', w / 2, 70); }));
+  label.encoding = THREE.sRGBEncoding;
+  for (const sx of [-1, 1]) { const p = new THREE.Mesh(new THREE.PlaneGeometry(7, 1.3), new THREE.MeshStandardMaterial({ map: label, roughness: 0.6 })); p.position.set(sx * 1.87, 0.3, 0); p.rotation.y = sx * Math.PI / 2; g.add(p); }
+  // four rotor arms with spinning blades
+  for (const [x, z] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) {
+    const arm = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.3, 0.4), dark); arm.position.set(x * 2.9, 1.5, z * 4.4); g.add(arm);
+    const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.45, 0.7, 12), dark); hub.position.set(x * 4.1, 1.85, z * 4.4); g.add(hub);
+    const rot = new THREE.Group(); rot.position.set(x * 4.1, 2.25, z * 4.4);
+    for (let k = 0; k < 3; k++) { const b = new THREE.Mesh(new THREE.BoxGeometry(4.2, 0.06, 0.38), dark); b.rotation.y = k * Math.PI / 3 * 2; rot.add(b); }
+    const disc = new THREE.Mesh(new THREE.CircleGeometry(2.15, 32), new THREE.MeshBasicMaterial({ color: 0x111111, transparent: true, opacity: 0.18, depthWrite: false })); disc.rotation.x = -Math.PI / 2; rot.add(disc);
+    g.add(rot); BUS.rotors.push(rot);
+    const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.16, 8, 6), glow); lamp.position.set(x * 1.9, -1.75, z * 5.2); g.add(lamp);
+  }
+  g.traverse(o => { if (o.isMesh) o.castShadow = true; });
+  g.visible = false; scene.add(g); return g;
+}
+function planBus(id) {
+  const rnd = mulberry(id * 7919 + 3);
+  BUS.a = rnd() * Math.PI * 2;
+  const off = (rnd() - 0.5) * BOUND * 0.6, dx = Math.cos(BUS.a), dz = Math.sin(BUS.a);
+  BUS.d.set(dx, 0, dz); BUS.L = BOUND + 70;
+  const cx = -dz * off, cz = dx * off;
+  BUS.s.set(cx - dx * BUS.L, 0, cz - dz * BUS.L);
+  BUS.T = BUS.L * 2 / BUS_V;
+}
+function busAt(t, out) { const k = clamp(t, 0, BUS.T); out.copy(BUS.s).addScaledVector(BUS.d, k * BUS_V); out.y = 158 + Math.sin(t * 0.7) * 0.6; return out; }
+function islandSpot(rnd) { const a = rnd() * 6.283, d = Math.sqrt(rnd()) * 15; return new V3(ISL.x + Math.cos(a) * d, ISL.y, ISL.z + Math.sin(a) * d); }
+// a match starts: everyone onto the island
+function brIslandStart(id) {
+  if (!ISL.g) { islandSetup(); BUS.g = busModel(); }
+  planBus(id); BR.pre = busPhaseLen(); BR.phase = 'island'; ISL.on = true; ISL.g.visible = true; onBus = false;
+  const p = islandSpot(Math.random); player.pos.copy(p); player.vel.set(0, 0, 0); player.onGround = true; player.yaw = Math.atan2(-(ISL.x - p.x), -(ISL.z - 10 - p.z)); player.pitch = 0;
+  dropping = false; chuteOpen = false; $('dropHint').hidden = true;
+  if (iAmHost) {
+    const rnd = mulberry(id * 31 + 7);
+    for (const e of ents.values()) if (e.kind === 'bot') {
+      const q = islandSpot(rnd); e.pos.copy(q); e.tp.copy(q); e.vel.set(0, 0, 0); e.dropping = false; e.onBus = false; e.yaw = rnd() * 6.28;
+      const jt = (0.12 + rnd() * 0.74) * BUS.T, bp = busAt(jt, new V3()), side = (rnd() - 0.5) * 140;
+      let tx = bp.x - BUS.d.z * side, tz = bp.z + BUS.d.x * side;
+      if (Math.hypot(tx, tz) > BOUND - 10 || !validStand(tx, tz)) { const q2 = botDrop(e); tx = q2.x; tz = q2.z; }
+      e.jumpAt = jt; e.busTo = { x: tx, z: tz }; if (e.ai) e.ai.lastPos.copy(e.pos);
+    }
+  }
+}
+function islandH(x, z, y) { return ISL.on && Math.hypot(x - ISL.x, z - ISL.z) < ISL.r && y > ISL.y - 3 ? ISL.y : -1e9; }
+const _bc = new V3(), _bl = new V3();
+// every frame while the match is on the island or in the air: returns true when the player rides the box (skip normal movement)
+function busFrame(dt) {
+  if (!inGame || BR.mode > 4 || !(BR.phase === 'island' || BR.phase === 'bus')) { if (BUS.g && BR.phase !== 'drop') BUS.g.visible = false; return false; }
+  const tb = BR.t - ISL_T;
+  if (BR.phase === 'island') {
+    if (player.pos.y < ISL.y - 25 || Math.hypot(player.pos.x - ISL.x, player.pos.z - ISL.z) > ISL.r + 30) { const p = islandSpot(Math.random); player.pos.copy(p); player.vel.set(0, 0, 0); }
+    setBusHud('The Battle Box leaves in <b>' + Math.max(1, Math.ceil(ISL_T - BR.t)) + '</b><span>Waiting for players · nobody can be hurt here</span>');
+    if (tb >= 0) { BR.phase = 'bus'; onBus = me.alive; clearBuilds(); setBuildMode(false); sfx.spawn(); if (iAmHost) for (const e of ents.values()) if (e.kind === 'bot') e.onBus = true; }
+    return false;
+  }
+  // in the air: the box flies its line; you ride inside until you jump (Space) or it reaches the far side
+  BUS.g.visible = true; busAt(tb, BUS.pos); BUS.g.position.copy(BUS.pos); BUS.g.rotation.y = Math.atan2(BUS.d.x, BUS.d.z);
+  for (const r of BUS.rotors) r.rotation.y += dt * 38;
+  if (ISL.g.visible && tb > 2) { ISL.g.visible = false; ISL.on = false; }
+  if (tb >= BUS.T) { BR.phase = 'drop'; ISL.on = false; ISL.g.visible = false; if (onBus) busJump(); BUS.g.visible = false; setBusHud(''); return false; }
+  if (!onBus) { setBusHud(''); return false; }
+  player.pos.copy(BUS.pos); player.pos.y -= 0.6; player.vel.set(0, 0, 0);
+  const left = Math.max(0, BUS.T - tb);
+  setBusHud('<b>Space</b> jump out<span>Auto-drop in ' + Math.ceil(left) + ' s · look around with the mouse</span>');
+  if (jumpQueued && tb > 1.2) { jumpQueued = false; busJump(); return false; }
+  jumpQueued = false;
+  // camera: orbit the box with your look direction
+  const cp = Math.cos(player.pitch), fx = -Math.sin(player.yaw) * cp, fy = Math.sin(player.pitch), fz = -Math.cos(player.yaw) * cp;
+  _bc.set(BUS.pos.x - fx * 16, BUS.pos.y + 4 - fy * 16, BUS.pos.z - fz * 16);
+  camera.position.copy(_bc); camera.lookAt(_bl.copy(BUS.pos).add(new V3(fx * 6, 0, fz * 6)));
+  return true;
+}
+function busJump() {
+  onBus = false; dropping = true; chuteOpen = false;
+  player.pos.copy(BUS.pos); player.pos.y -= 2.5; player.vel.set(BUS.d.x * 14, -4, BUS.d.z * 14); player.onGround = false; player.pitch = -0.7;
+  $('dropHint').hidden = false; sfx.swish && sfx.swish(); setBusHud('');
+}
+function busBot(e, dt) {
+  // host: bots ride inside the box and jump at their own moment, aiming for a spot near the flight path
+  const tb = BR.t - ISL_T;
+  if (BR.phase === 'island') { e.vel.set(0, 0, 0); e.pos.y = ISL.y; return true; }
+  if (!e.onBus) return false;
+  busAt(tb, e.pos); e.pos.y -= 0.6; e.tp.copy(e.pos);
+  if (tb >= (e.jumpAt || 0) || tb >= BUS.T) { e.onBus = false; e.dropping = true; e.dropTo = e.busTo || botDrop(e); e.pos.y -= 2; e.vel.set(0, 0, 0); if (e.model) e.model.fall = 0; }
+  return true;
+}
+function setBusHud(html) {
+  let h = $('busHud');
+  if (!h) { h = el('div'); h.id = 'busHud'; document.body.append(h); }
+  if (h._h !== html) { h._h = html; h.innerHTML = html; h.hidden = !html; }
+}
+// remote bots seen by other players: hide the ones riding inside the box
+function busHideBot(e) { return BR.phase === 'bus' && BUS.g && BUS.g.visible && e.pos.distanceTo(BUS.pos) < 7; }
+
+/* ---------- the final kill: slow motion, letterbox, the camera circles the last elimination ---------- */
+const CINE = { on: false, t0: 0, dur: 3600, p: new V3(), a0: 0, shown: false };
+let lastDeath = null, gameT = 0;
+function startCine(victim) {
+  CINE.on = true; CINE.t0 = performance.now(); CINE.p.copy(victim && victim.pos ? victim.pos : player.pos); CINE.a0 = player.yaw + Math.PI * 0.8; CINE.shown = false;
+  let bars = $('cineBars'); if (!bars) { bars = el('div'); bars.id = 'cineBars'; bars.innerHTML = '<i></i><i></i><b>Victory</b>'; document.body.append(bars); }
+  document.body.classList.add('cine'); bars.className = 'on'; try { sfx.kill(); setTimeout(() => sfx.boom(30, 0), 140); } catch (e) {}
+}
+function cineScale() { return CINE.on ? 0.22 : 1; }
+function cineFrame() {
+  if (!CINE.on) return;
+  const k = (performance.now() - CINE.t0) / CINE.dur;
+  if (k >= 1) { CINE.on = false; document.body.classList.remove('cine'); $('cineBars').className = ''; $('brEnd').hidden = false; return; }
+  $('brEnd').hidden = true;
+  const a = CINE.a0 + k * 2.2, r = 3.4 + k * 3.2, h = 1.0 + k * 2.4;
+  camera.position.set(CINE.p.x + Math.sin(a) * r, CINE.p.y + h, CINE.p.z + Math.cos(a) * r);
+  const gy = terrainH(camera.position.x, camera.position.z) + 0.5; if (camera.position.y < gy) camera.position.y = gy;
+  camera.lookAt(CINE.p.x, CINE.p.y + 0.9, CINE.p.z);
+  if (k > 0.55 && !CINE.shown) { CINE.shown = true; $('cineBars').className = 'on win'; try { sfx.chest(); } catch (e) {} }
+}
+
 /* ================= Game state ================= */
 let MAG = 30; const EYE = 1.62, SLOTS = 10, NET_TAG = 'on1';
 const BOT_NAMES = ['Fjell', 'Ravn', 'Skarv', 'Tindra', 'Odin', 'Juno', 'Brisk', 'Nova', 'Grim', 'Saga', 'Hawk', 'Linn', 'Kestrel', 'Marsh', 'Ondra', 'Vesper', 'Halloran', 'Tamsin', 'Ruiz', 'Okafor', 'Brann', 'Lio', 'Sable', 'Petra', 'Cato', 'Imre'];
@@ -5210,12 +5380,13 @@ function applyDamage(target, dmg, attackerId, crit) {
   else sendHit(target.id, dmg, attackerId, crit);
 }
 function damageEnt(e, dmg, attackerId, crit) {
-  if (!e.alive || e.dropping || BR.phase === 'end' || sameTeam(getEnt(attackerId), e)) return;
+  if (!e.alive || e.dropping || BR.phase === 'end' || BR.phase === 'island' || BR.phase === 'bus' || sameTeam(getEnt(attackerId), e)) return;
   e.hp -= dmg;
   if (e.ai && attackerId) { e.ai.attacker = attackerId; const a = getEnt(attackerId); if (a && !e.ai.visible) { e.ai.lastSeen.copy(a.pos); e.ai.lastSeenT = 0; e.ai.target = attackerId; } }
   if (e.hp <= 0) { e.hp = 0; e.alive = false; e.deadT = 0; e.dc++; e.kb = attackerId; e.d++; onDeath(e, attackerId, crit); }
 }
 function damageMe(dmg, attackerId) {
+  if (BR.phase === 'island' || BR.phase === 'bus') return;
   if (devT.god && me.alive) { me.hp = 100; return; }
   if (!inGame || !me.alive || spawnProt > 0 || dropping || BR.phase === 'end' || sameTeam(getEnt(attackerId), me)) return;
   { const sa = Math.min(me.shield || 0, dmg); me.shield = (me.shield || 0) - sa; dmg -= sa; }
@@ -5234,6 +5405,7 @@ function damageMe(dmg, attackerId) {
   }
 }
 function onDeath(victim, killerId, crit) {
+  lastDeath = { victim, at: gameT };
   addFeed(killerId, victim.id, crit);
   try { arsenalOnDeath(victim); } catch (err) {}
   if (killerId === me.id && victim !== me) {
@@ -5323,6 +5495,7 @@ function beginMatch(id) {
   BR.total = aliveCount();
   sfx.spawn();
   $('dropHint').hidden = isTouch;
+  if (BR.mode <= 4) brIslandStart(id); else { BR.pre = 0; ISL.on = false; if (ISL.g) ISL.g.visible = false; onBus = false; }
   if (BR.mode === 6) ctfBegin();
   if (BR.mode >= 5) {
     BR.phase = 'fight'; dropping = false; chuteOpen = false; $('dropHint').hidden = true;
@@ -5337,6 +5510,7 @@ function endMatch(winnerId) {
   const won = !!winnerId && (winnerId === me.id || (BR.winTeam && BR.winTeam === teamOf(me)) || sameTeam(getEnt(winnerId), me));
   const teams = teamSize() > 1;
   if (won) BUCKS.add(100);
+  if (won && BR.mode <= 5 && lastDeath && lastDeath.victim !== me && gameT - lastDeath.at < 2.5) startCine(lastDeath.victim);
   { const pl = won ? 1 : BR.place; XPS.add(60 + (won ? 400 : 0) + (pl && pl <= 10 ? 60 : 0)); chEvent('match'); if (won && BR.mode <= 4) chEvent('win'); if (BR.mode <= 4 && pl && pl <= 5) chEvent('top5'); }
   $('brEyebrow').textContent = won ? '#1 · Victory · +100 onebucks' : (BR.place ? `You placed #${BR.place}` : 'Match over');
   if (BR.mode === 6) BR.place = 0;
@@ -5353,13 +5527,13 @@ function updateBR(dt) {
     if (iAmHost && BR.t > 9) beginMatch(BR.id + 1);
     return;
   }
-  if (BR.phase === 'drop' && BR.t > 4) {
+  if (BR.phase === 'drop' && BR.t - (BR.pre || 0) > 4) {
     let anyDropping = dropping; for (const e of ents.values()) if (e.alive && e.dropping) anyDropping = true;
-    if (!anyDropping || BR.t > 40) BR.phase = 'fight';
+    if (!anyDropping || BR.t - (BR.pre || 0) > 40) BR.phase = 'fight';
   }
   if (BR.mode === 5) { updateFFA(dt); return; }
   if (BR.mode === 6) { updateCTF(dt); return; }
-  if (iAmHost && BR.t > 3) {
+  if (iAmHost && BR.t > 3 && BR.phase !== 'island' && BR.phase !== 'bus') {
     const alive = aliveList();
     if (aliveTeams().size <= 1) { BR.winTeam = alive[0] ? teamOf(alive[0]) : null; endMatch(alive[0] ? alive[0].id : null); }
   }
@@ -5551,6 +5725,7 @@ function spectateCam(dt) {
 }
 
 function updateBotAI(e, dt) {
+  if (BR.mode <= 4 && (BR.phase === 'island' || e.onBus) && busBot(e, dt)) return;
   if (e.dropping && e.alive) {
     // free fall, then the glider opens about 40 m up; drift onto the chosen spot
     const gh = terrainH(e.pos.x, e.pos.z), above = e.pos.y - gh;
@@ -6610,9 +6785,9 @@ const gasWall = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 320, 160, 1, tru
 gasWall.position.y = 110; gasWall.frustumCulled = false; gasWall.renderOrder = 4; gasWall.visible = false; scene.add(gasWall);
 const fogBase = { c: scene.fog.color.clone(), d: scene.fog.density }, fogGas = new THREE.Color(0.42, 0.5, 0.26);
 function updateGas(dt) {
-  if (!inGame || BR.phase === 'none' || BR.mode >= 5) { gasWall.visible = false; GAS.outside = false; return; }
+  if (!inGame || BR.phase === 'none' || BR.mode >= 5 || BR.phase === 'island' || BR.phase === 'bus') { gasWall.visible = false; GAS.outside = false; return; }
   if (GAS.planId !== BR.id) { GAS.plan = planGas(BR.id); GAS.planId = BR.id; GAS.tick = 1; }
-  let t = BR.phase === 'end' ? 1e9 : BR.t, i = 0, p = GAS.plan[0];
+  let t = BR.phase === 'end' ? 1e9 : BR.t - (BR.pre || 0), i = 0, p = GAS.plan[0];
   for (; i < GAS.plan.length; i++) { p = GAS.plan[i]; if (t < p.wait + p.shrink) break; t -= p.wait + p.shrink; }
   if (i >= GAS.plan.length) { p = GAS.plan[GAS.plan.length - 1]; GAS.cx = p.nx; GAS.cz = p.nz; GAS.r = p.nr; GAS.shrinking = false; GAS.left = 0; }
   else if (t < p.wait) { GAS.cx = p.cx; GAS.cz = p.cz; GAS.r = p.r; GAS.shrinking = false; GAS.left = p.wait - t; }
@@ -6638,6 +6813,7 @@ function updateGas(dt) {
 function fmtT(s) { s = Math.max(0, Math.ceil(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }
 function gasHud() {
   if (BR.mode === 6) { ctfHud(); return; }
+  if (BR.phase === 'island' || BR.phase === 'bus') { setText('gasL', 'Gas starts after the drop'); setText('gasT', ''); setText('gasW', ''); $('gasW').classList.remove('bad'); return; }
   if (BR.mode === 5) {
     const lead = ffaLeader();
     setText('gasL', BR.phase === 'end' ? 'Match over' : 'First to ' + FFA_KILLS + (lead && lead.k ? ' · ' + (lead === me ? 'you lead' : (lead.name || 'leader')) + ' ' + lead.k : ''));
@@ -6719,7 +6895,7 @@ const SET = [
   ['video', 'fov', 'Field of view', 'range', { min: 60, max: 100, step: 1, def: 72, fmt: v => v + '°' }],
   ['video', 'scale', 'Resolution', 'range', { min: 0.5, max: 1, step: 0.05, def: 1, fmt: pctF }],
   ['video', 'shadows', 'Shadows', 'check', { def: true }],
-  ['video', 'grass', 'Grass', 'select', { def: '3', options: [['0', 'Off'], ['1', 'Close by only'], ['2', 'Medium'], ['3', 'Far']] }],
+  ['video', 'grass', 'Grass distance', 'select', { def: '3', options: [['0', 'Off'], ['1', '20 m'], ['2', '30 m'], ['3', '40 m'], ['4', '55 m (heavier)'], ['5', '70 m (heaviest)']] }],
   ['video', 'shake', 'Camera shake', 'range', { min: 0, max: 1, step: 0.05, def: 1, fmt: pctF }],
   ['video', 'bob', 'Head bob when you walk', 'range', { min: 0, max: 1, step: 0.05, def: 1, fmt: pctF }],
   ['audio', 'vol', 'Volume', 'range', { min: 0, max: 1, step: 0.01, def: 0.8, fmt: pctF }],
@@ -6891,7 +7067,7 @@ function updateFpsBox() {
 const _tpH = new V3(), _tpD = new V3(), _tpR = new V3(), _tpW = new V3(), _tpRay = new THREE.Raycaster();
 let tpDist = 3.2;
 // aiming down sights always goes to the first-person view: the gun comes up to your eye with its red dot (or bead)
-function thirdPerson() { return (settings.camera !== 'first' || !!selfView.emote) && inGame && me.alive && state !== 'menu' && !adsActive(); }
+function thirdPerson() { if ((onBus || CINE.on) && inGame) return true; return (settings.camera !== 'first' || !!selfView.emote) && inGame && me.alive && state !== 'menu' && !adsActive(); }
 function tpNear() { return thirdPerson() && !dropping ? camera.position.distanceTo(_tpH) + 0.35 : 0; }
 let emoCamT = 0, emoCamD = 3.4;
 function emoteCam(dt) {
@@ -7197,6 +7373,7 @@ function look(dx, dy, sens) {
 }
 
 function updatePlayer(dt) {
+  if (busFrame(dt)) return;
   const canAct = state === 'playing' && me.alive;
   let ix = 0, iz = 0;
   if (canAct) {
@@ -7427,7 +7604,7 @@ function startGame() {
   if (iAmHost || !hp || !(hp.bi | 0)) beginMatch(BR.id + 1);
   else if (hp.bp === 'drop') beginMatch(hp.bi | 0);
   else {
-    BR.id = hp.bi | 0; BR.phase = hp.bp === 'end' ? 'end' : 'fight'; BR.t = 5;
+    BR.id = hp.bi | 0; BR.phase = hp.bp === 'end' ? 'end' : 'fight'; BR.t = 5; if (BR.mode <= 4) { if (!ISL.g) { islandSetup(); BUS.g = busModel(); } planBus(BR.id); BR.pre = busPhaseLen(); } else BR.pre = 0;
     me.alive = false; me.hp = 0; deathT = 2; BR.place = 0; dropping = false; spectating = null;
     $('death').hidden = false; $('death').querySelector('.lbl').textContent = 'Match in progress · you drop in next match';
   }
@@ -7525,7 +7702,7 @@ function afkKick() {
 }
 setInterval(() => {
   const w = $('afkWarn');
-  const watched = inGame && BR.phase !== 'end' && BR.phase !== 'none' && (me.alive || BR.mode === 5);
+  const watched = inGame && BR.phase !== 'end' && BR.phase !== 'none' && BR.phase !== 'island' && BR.phase !== 'bus' && (me.alive || BR.mode === 5);
   if (!watched) { lastInput = performance.now(); afkLast.x = player.pos.x; afkLast.z = player.pos.z; afkLast.yaw = player.yaw; afkLast.pitch = player.pitch; afkLast.look = 0; if (!w.hidden) w.hidden = true; return; }
   afkActivity(); afkLookDecay++; if (afkLookDecay >= 8) { afkLookDecay = 0; afkLast.look *= 0.5; }
   const idle = (performance.now() - lastInput) / 1000;
@@ -7721,7 +7898,7 @@ function applyGfx() {
   const full = Math.min(window.devicePixelRatio || 1, isTouch ? 1.25 : 1.5);
   quality = settings.gfx === 'low' ? 3 : 0;
   pixelRatio = full * settings.scale; if (settings.gfx === 'low') pixelRatio = Math.min(pixelRatio, 0.6);
-  grass.count = Math.floor(grass.userData.full * [0, 0.25, 0.5, 1][settings.grass | 0]);
+  grass.count = grassWant();
   sun.castShadow = !!settings.shadows;
   camera.far = settings.gfx === 'low' ? 420 : 1100; camera.updateProjectionMatrix();
   for (const o of scene.userData.lowHide || []) o.visible = settings.gfx !== 'low';
@@ -7741,7 +7918,7 @@ let last = performance.now(), orbitA = 0.6, popT = 0, fpsT = 0, fpsN = 0, qualit
 const _q = new THREE.Quaternion();
 function frame(now) {
   requestAnimationFrame(frame);
-  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  const dt = Math.min(0.05, (now - last) / 1000) * cineScale(); last = now;
   processNet();
   const worldRuns = state !== 'paused' || activeRemotes() > 0;
   if (worldRuns) {
@@ -7788,8 +7965,8 @@ function frame(now) {
       if (fps < 27 && quality < 3 && !window.__noAdapt && settings.gfx === 'auto') {
         quality++;
         if (quality === 1) pixelRatio = Math.min(pixelRatio, 1);
-        if (quality === 2) { pixelRatio = Math.min(pixelRatio, 0.75); grass.count = Math.floor(grass.userData.full / 2); }
-        if (quality === 3) { sun.castShadow = false; grass.count = Math.floor(grass.userData.full / 4); }
+        if (quality === 2) { pixelRatio = Math.min(pixelRatio, 0.75); grass.count = Math.floor(grassWant() / 2); }
+        if (quality === 3) { sun.castShadow = false; grass.count = Math.floor(grassWant() / 4); }
         renderer.setPixelRatio(pixelRatio); resize();
       }
     }
