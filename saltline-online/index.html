@@ -1483,7 +1483,9 @@ function fbm(x, z) { return vnoise(x, z) * 0.6 + vnoise(x * 2.1 + 5.2, z * 2.1 +
 const POND = { x: 24 * MS, z: -20 * MS, r: 15 };
 // cabins: [x, z, rotated?]
 const HOUSES = [[-40, 28, 0], [20, 60, 1], [-56, -44, 1], [72, 16, 0], [-14, -80, 0], [94, -48, 1], [-98, 8, 1], [36, 100, 0], [-82, -40, 0], [40, -84, 1], [-55, 72, 1], [86, 40, 0]].map(([x, z, r]) => [x * MS / 2, z * MS / 2, r]);
-function terrainH(x, z) {
+var TG_READY = false;
+function terrainH(x, z) { return TG_READY ? meshH(x, z) : terrainH0(x, z); }
+function terrainH0(x, z) {
   const xs = x / MS, zs = z / MS;
   let h = (fbm(xs * 0.022 + 3.1, zs * 0.022 + 7.4) - 0.5) * 14 + (fbm(x * 0.05, z * 0.05) - 0.5) * 1.8;
   const r = Math.hypot(xs, zs);
@@ -1511,7 +1513,7 @@ function terrainFeatures(x, z, h) {
   for (const [mx, mz, H, r] of MESAS) {
     const dx = x - mx, dz = z - mz, d = Math.hypot(dx, dz); if (d > r + 14) continue;
     const ramp = Math.max(0, Math.cos(Math.atan2(dz, dx) - Math.atan2(-mz, -mx)));                // the side facing the middle slopes gently
-    const w = 1.6 + 11 * ramp * ramp, k = 1 - sstep(r, r + w, d);
+    const w = 3.2 + 10 * ramp * ramp, k = 1 - sstep(r, r + w, d);
     h += H * k + (k > 0.98 ? Math.sin(x * 0.7) * Math.sin(z * 0.6) * 0.15 : 0);
   }
   if (!TF) return h;
@@ -1629,6 +1631,7 @@ const terrainChunks = [];
     scene.add(m); terrainChunks.push(m);
   }
 }
+TG_READY = true;
 // distant mountain range: dark spruce forest up to a ragged treeline, alpine heath and scree above, bare rock on the
 // steep faces and snow lying on the gentler slopes near the tops. Faded by the haze.
 {
