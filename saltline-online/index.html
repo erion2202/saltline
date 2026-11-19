@@ -3453,7 +3453,10 @@ function buildSoldier2(colorIdx, name) {
   const bones = {};
   body.traverse(o => {
     if (o.isBone) { const nm = o.name.replace(/_\d+$/, ''); if (S2_BONES.includes(nm) && !bones[nm]) bones[nm] = o; }
-    if (o.isMesh) { const n = o.material && o.material.name; const mt = MAP[n] || SM.uniform; o.material = !o.isSkinnedMesh || mt === accent ? mt : s2Skinned(mt); o.castShadow = true; o.receiveShadow = true; o.frustumCulled = false; }
+    if (o.isMesh) { const n = o.material && o.material.name; const mt = MAP[n] || SM.uniform; o.material = !o.isSkinnedMesh || mt === accent ? mt : s2Skinned(mt); o.castShadow = true; o.receiveShadow = true;
+      // skinned parts keep their bind-pose bounds: grow them once so posed limbs are never culled by mistake, then let the camera cull
+      const g_ = o.geometry; if (!g_.boundingSphere) g_.computeBoundingSphere(); if (!g_.userData.grown) { g_.boundingSphere.radius *= 1.8; g_.userData.grown = true; }
+      o.frustumCulled = true; }
   });
   const rest = {}; for (const k of S2_BONES) rest[k] = bones[k].quaternion.clone();
   const hipsRest = bones.hips.position.clone();
@@ -3759,7 +3762,7 @@ const GUNS = {
   sniper: { name: 'Longshot', cls: 'Sniper', rar: 4, auto: false, mag: 5, cd: 1.15, bolt: true, dmg: 105, head: 2.6, f0: 300, f1: 400, fmin: 1, rl: 1.2, hip: 4, ads: 0.02, kick: 4.2,
             sight: 'scope', zoom: 8, adsSpeed: 0.7, move: 0.95, bot: 45, botHead: 95, special: '8x scope: one-shot headshots from across the valley' },
 };
-for (const [id, g] of Object.entries(GUNS)) { if (g.cls === 'SMG') { g.relief = 0.17; g.adsSpeed = 1.35; g.adsDot = true; } for (const k in GDEF) if (g[k] === undefined) g[k] = GDEF[k]; g.id = id; }
+for (const [id, g] of Object.entries(GUNS)) { if (g.cls === 'SMG') { g.relief = 0.12; g.adsSpeed = 1.35; g.adsDot = true; } for (const k in GDEF) if (g[k] === undefined) g[k] = GDEF[k]; g.id = id; }
 const GUN_IDS = Object.keys(GUNS);
 const KNIFE_DEF = Object.assign({}, GDEF, { id: 'knife', name: 'Knife', view: 2 });
 const inv = { slots: [{ id: 'pistol', ammo: 15 }, null], sel: 0, token: false };
@@ -3873,12 +3876,27 @@ function fpBuild(id) {
   let moverW = null;
   if (mover) { moverW = new THREE.Group(); const inner = new THREE.Group(); inner.position.z = 0.1; inner.add(mover); moverW.add(inner); moverW.userData.inner = inner; moverW.userData.mover = mover; root.add(moverW); }
   const off = id === 'pistol' ? new V3(0, 0.012, -0.022) : new V3();
+  if (GUNS[id] && GUNS[id].cls === 'SMG') root.add(smgReflex());
   root.position.copy(off);
   const P = n => M.pts[n] ? M.pts[n].clone().add(off) : null;
   FPV.built[id] = { root, mag, moverW, off, P, id };
   return FPV.built[id];
 }
 let viewGunId = 'tac';
+const SMG_DOT_U = 0.1;
+function smgReflex() {
+  const g = new THREE.Group(), blk = VM.black;
+  const glass = new THREE.MeshBasicMaterial({ color: 0x8fd0ff, transparent: true, opacity: 0.1, depthWrite: false });
+  const add = (w, h, d, x, y, z, m = blk) => { const o = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); o.position.set(x, y, z); o.frustumCulled = false; g.add(o); return o; };
+  add(0.026, 0.012, 0.05, 0, 0.067, -0.012);                                  // mount on the claw rails
+  add(0.03, 0.012, 0.03, 0, 0.078, -0.008);                                   // body
+  const cy = SMG_DOT_U, R = 0.017, t = 0.0024, fz = -0.016;                   // open window frame
+  add(2 * R, t, 0.008, 0, cy + R, fz); add(t, 2 * R, 0.008, -R, cy, fz); add(t, 2 * R, 0.008, R, cy, fz); add(2 * R, t, 0.01, 0, cy - R + 0.002, fz);
+  add(0.012, 0.006, 0.006, R + 0.004, cy - 0.006, -0.008);                    // brightness button
+  const gl = new THREE.Mesh(new THREE.PlaneGeometry(2 * R - t, 2 * R - t), glass); gl.position.set(0, cy, fz - 0.002); gl.frustumCulled = false; g.add(gl);
+  for (const o of g.children) if (o.material === blk) o.castShadow = true;
+  return g;
+}
 function setViewGun(def, force) {
   if (!def || def.view === 2) return;
   if (def.view === 3) { setShotgunModel(def.id); viewGunId = def.id; return; }
@@ -3908,7 +3926,7 @@ function setViewGun(def, force) {
   for (const k of ['B', 'B2', 'B3', 'Bt']) if (LH[k]) LH[k].p.copy(B.LH[k].p).add(dm);
   const fo = V.P('fore'); if (fo) LH.A.p.copy(fo).add(new V3(0, -0.042, 0));
   if (id === 'pistol') { LH.A.p.set(-0.028, -0.096, 0.052); LH.A.q.setFromEuler(new THREE.Euler(0.3, 0.2, -1.35)); }
-  const ey = V.P('eye');
+  const ey = def.cls === 'SMG' ? new V3(0, SMG_DOT_U, -0.006) : V.P('eye');
   if (ey) ADS.p.set(-ey.x, -ey.y, -def.relief - ey.z);
   HIP.p.copy(B.HIP); if (id === 'pistol') HIP.p.add(new V3(-0.035, 0.06, -0.06));
   bolt = V.moverW || new THREE.Object3D();
@@ -4030,7 +4048,7 @@ const ringMat = new THREE.MeshBasicMaterial({ map: glowTex, color: 0xffc740, tra
 const itemBeamGeo = new THREE.CylinderGeometry(0.05, 0.12, 2.4, 10, 1, true);
 const sparkGeo = new THREE.BufferGeometry(); { const p = new Float32Array(24 * 3); for (let i = 0; i < 24; i++) { p[i * 3] = (Math.random() - 0.5) * 1.3; p[i * 3 + 1] = Math.random() * 1.8; p[i * 3 + 2] = (Math.random() - 0.5) * 1.0; } sparkGeo.setAttribute('position', new THREE.BufferAttribute(p, 3)); }
 const sparkMat = new THREE.PointsMaterial({ color: 0xffe28a, size: 0.07, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0.9, toneMapped: false });
-for (let i = 0; i < 2; i++) { const L = new THREE.PointLight(0xffc650, 0, 9, 2); scene.add(L); LOOT.lights.push(L); }
+// (no extra point lights: every lit surface in the valley would pay for them)
 function chestFallback() {
   const g = new THREE.Group(), w = new THREE.MeshStandardMaterial({ color: 0x6a3d1e, roughness: 0.75 }), gold = new THREE.MeshStandardMaterial({ color: 0xd9a33a, metalness: 1, roughness: 0.3 });
   fixMat(w); fixMat(gold);
@@ -4054,7 +4072,7 @@ function chestsModelReady() { for (const c of LOOT.chests) if (c.fallback) { sce
 function buildChestVisual(c) {
   const m = chestMesh(); c.g = m.g; c.lid = m.lid; c.fallback = !ARS.ready.chest;
   c.g.position.set(c.x, c.y, c.z); c.g.rotation.y = c.rot; scene.add(c.g);
-  c.g.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; o.frustumCulled = true; } });
+  c.g.traverse(o => { if (o.isMesh) { o.castShadow = false; o.receiveShadow = true; o.frustumCulled = true; } });
   const aura = new THREE.Sprite(auraMat.clone()); aura.scale.set(2.6, 2.1, 1); aura.position.y = 0.45; c.g.add(aura); c.aura = aura;
   const rays = new THREE.Mesh(rayGeo, rayMat.clone()); rays.position.y = 1.25; c.g.add(rays); c.rays = rays;
   const ring = new THREE.Mesh(ringGeo, ringMat.clone()); ring.position.y = 0.04; c.g.add(ring); c.ring = ring;
@@ -4095,7 +4113,7 @@ function itemMesh(it) {
   beam.position.y = 1.2; g.add(beam);
   const ring = new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({ map: glowTex, color: rar.h, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0.7, toneMapped: false }));
   ring.scale.setScalar(0.55); ring.position.y = 0.03; g.add(ring);
-  g.traverse(o => { if (o.isMesh && !o.material.transparent) o.castShadow = true; });
+  g.traverse(o => { if (o.isMesh) { o.castShadow = false; o.frustumCulled = true; } });
   return g;
 }
 function addItem(uid, gid, x, z, ammoN, fromY) {
@@ -4158,7 +4176,8 @@ function updateLoot(dt) {
   const near = [];
   for (const c of LOOT.chests) {
     const d = Math.hypot(c.x - camera.position.x, c.z - camera.position.z);
-    c.g.visible = d < 170;
+    c.g.visible = d < 210;
+    if (c.g.visible) { const nearM = d < 70; for (const ch of c.g.children) if (!c.fx.includes(ch)) ch.visible = nearM; c.ring.visible = c.spark.visible = d < 55 && c.glow > 0.01; }
     if (!c.g.visible) continue;
     if (c.openT > 0 && c.openT < 1) { c.openT = Math.min(1, c.openT + dt / 0.55); const k = 1 - Math.pow(1 - c.openT, 3); c.lid.rotation.x = -1.9 * k; }
     if (c.open) c.glow = Math.max(0, c.glow - dt * 0.9);
@@ -4166,11 +4185,11 @@ function updateLoot(dt) {
     const pul = 0.85 + Math.sin(now * 3 + c.i) * 0.15, gl = c.glow;
     c.aura.material.opacity = 0.85 * pul * gl; c.rays.material.opacity = 0.45 * pul * gl; c.ring.material.opacity = 0.75 * pul * gl; c.spark.material.opacity = 0.9 * gl;
     c.rays.rotation.y += dt * 0.4; c.spark.rotation.y -= dt * 0.6; c.spark.position.y = ((now * 0.5 + c.i * 0.13) % 1) * 0.35;
-    for (const f of c.fx) f.visible = gl > 0.01;
+    c.aura.visible = c.rays.visible = gl > 0.01; if (d >= 55) c.ring.visible = c.spark.visible = false; else c.ring.visible = c.spark.visible = gl > 0.01;
     if (gl > 0.01) near.push([d, c]);
   }
   near.sort((a, b) => a[0] - b[0]);
-  LOOT.lights.forEach((L, k) => { const n = near[k]; if (n && n[0] < 40) { L.position.set(n[1].x, n[1].y + 0.9, n[1].z); L.intensity = 2.2 * n[1].glow * (0.85 + Math.sin(now * 3 + n[1].i) * 0.15); } else L.intensity = 0; });
+  if (LOOT.lights.length) LOOT.lights.forEach((L, k) => { const n = near[k]; if (n && n[0] < 40) { L.position.set(n[1].x, n[1].y + 0.9, n[1].z); L.intensity = 2.2 * n[1].glow * (0.85 + Math.sin(now * 3 + n[1].i) * 0.15); } else L.intensity = 0; });
   // ground items: pop out of chests in an arc, then bob and turn
   for (const it of LOOT.items.values()) {
     it.t += dt;
@@ -4195,7 +4214,7 @@ function updateLoot(dt) {
 // network: what everyone in this match has opened, dropped and picked up
 function lootPresence() {
   if (!inGame) return { lc: null, ld: null, lp: null, gi: null };
-  return { lc: [...LOOT.myOpens].slice(-80), ld: LOOT.myDrops.slice(-24), lp: [...LOOT.myPicks].slice(-60), gi: curGunId() };
+  return { lc: [...LOOT.myOpens].slice(-40), ld: LOOT.myDrops.slice(-16), lp: [...LOOT.myPicks].slice(-40), gi: curGunId() };
 }
 function syncLoot() {
   if (!inGame || LOOT.match !== BR.id) return;
@@ -4254,7 +4273,7 @@ function s2GunModel(id) {
   const f2 = new THREE.Mesh(SG.flash, soldierFlashMat); f2.rotation.y = Math.PI / 2; flash.add(f2);
   const grip = P('grip') || new V3(0, -0.075, 0.075), fore = P('fore') || new V3(0, -0.035, -0.33), magP = P('mag') || new V3(0, -0.15, -0.05);
   if (id === 'pistol') fore.set(-0.03, -0.085, 0.04);
-  g.traverse(o => { if (o.isMesh) { o.castShadow = true; o.frustumCulled = false; } });
+  g.traverse(o => { if (o.isMesh) { o.castShadow = true; o.frustumCulled = true; } });
   return { g, muzzle, flash, pump: pw, grip, fore, mag: magP, butt: new V3(0, -0.02, 0.3), id };
 }
 function s2SelectGun(m, e) {
@@ -4340,11 +4359,53 @@ function swapWeapon() {
   const o = 1 - inv.sel; if (inv.slots[o]) equipSlot(o); else equipSlot(2);
 }
 let lootSyncT = 0;
+let shadowLodT = 0;
+function soldierShadowLod() {
+  for (const e of [...ents.values(), selfView]) {
+    const m = e.model; if (!m || !m.root) continue;
+    const far = m.root.position.distanceTo(camera.position) > 65;
+    if (m.farShadow === far) continue;
+    m.farShadow = far; m.root.traverse(o => { if (o.isMesh && o.material && o.material.visible !== false) o.castShadow = !far; });
+  }
+}
 function arsenalFrame(dt) {
+  shadowLodT -= dt; if (shadowLodT <= 0) { shadowLodT = 0.5; soldierShadowLod(); }
   updateLoot(dt);
   lootSyncT -= dt; if (lootSyncT <= 0) { lootSyncT = 0.25; syncLoot(); }
 }
 
+// ---- merge each cabin's pieces by material: 42 draw calls (and 42 shadow draws) per cabin become about 8
+(function mergeCabins() {
+  try {
+    const inv4 = new THREE.Matrix4(), rel = new THREE.Matrix4();
+    for (const g of scene.children) {
+      if (!g.isGroup || !HOUSES.some(([hx, hz]) => Math.abs(g.position.x - hx) < 0.01 && Math.abs(g.position.z - hz) < 0.01)) continue;
+      g.updateMatrixWorld(true); inv4.copy(g.matrixWorld).invert();
+      const buckets = new Map();
+      g.traverse(o => {
+        if (!o.isMesh || Array.isArray(o.material) || o.isSkinnedMesh || o.isInstancedMesh || !o.visible) return;
+        const a = o.geometry.attributes; if (!a.position || !a.normal) return;
+        const key = o.material.uuid + (o.castShadow ? 's' : '') + (o.receiveShadow ? 'r' : '');
+        (buckets.get(key) || buckets.set(key, []).get(key)).push(o);
+      });
+      for (const list of buckets.values()) {
+        if (list.length < 2) continue;
+        const geos = list.map(o => {
+          let gg = o.geometry.clone(); rel.multiplyMatrices(inv4, o.matrixWorld); gg.applyMatrix4(rel);
+          if (gg.index) gg = gg.toNonIndexed();
+          if (!gg.attributes.uv) gg.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(gg.attributes.position.count * 2), 2));
+          return gg;
+        });
+        const m = new THREE.Mesh(mergeGeos(geos), list[0].material);
+        m.castShadow = list[0].castShadow; m.receiveShadow = list[0].receiveShadow; Object.assign(m.userData, list[0].userData);
+        g.add(m); m.updateMatrixWorld(true);
+        let wasSolid = false;
+        for (const o of list) { const k = solids.indexOf(o); if (k >= 0) { solids.splice(k, 1); wasSolid = true; } o.parent.remove(o); }
+        if (wasSolid) solids.push(m);
+      }
+    }
+  } catch (err) { console.warn('cabin merge', err && err.message); }
+})();
 /* ================= Game state ================= */
 let MAG = 30; const EYE = 1.62, SLOTS = 10, NET_TAG = 'on1';
 const BOT_NAMES = ['Kestrel', 'Marsh', 'Ondra', 'Vesper', 'Halloran', 'Tamsin', 'Ruiz', 'Okafor', 'Brann', 'Lio', 'Sable', 'Petra', 'Cato', 'Imre'];
