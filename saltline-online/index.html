@@ -1123,6 +1123,7 @@ const store = {
 };
 const cleanName = s => String(s || '').replace(/[^\p{L}\p{N} _.'-]/gu, '').trim().slice(0, 16);
 const settings = {
+  fpsCap: String(store.get('fpsCap', '0')),
   name: cleanName(store.get('name', '')) || 'Player-' + Math.floor(1000 + Math.random() * 9000),
   diff: store.get('diff', 'regular'), sens: clamp(+store.get('sens', 1) || 1, 0.2, 3), wheel: store.get('wheel', true) !== false,
   autofire: store.get('autofire', true) !== false, gfx: ['auto', 'high', 'low'].includes(store.get('gfx', 'auto')) ? store.get('gfx', 'auto') : 'auto', assist: store.get('assist', true) !== false,
@@ -7186,6 +7187,7 @@ const SET = [
   ['hud', 'minimap', 'Show the minimap', 'check', { def: true }],
   ['hud', 'feed', 'Show who eliminated whom', 'check', { def: true }],
   ['hud', 'fps', 'Show frames per second', 'check', { def: false }],
+  ['video', 'fpsCap', 'Frame rate limit', 'select', { def: '0', options: [['0', 'Unlimited (screen max)'], ['max', 'Uncapped (experimental)'], ['30', '30'], ['60', '60'], ['90', '90'], ['120', '120'], ['144', '144'], ['165', '165'], ['240', '240']] }],
   ['hud', 'tips', 'Show tips', 'check', { def: true }],
 ];
 const SETDEF = {}; for (const [, k, , , o] of SET) SETDEF[k] = o.def;
@@ -8200,8 +8202,12 @@ resize();
 
 let last = performance.now(), orbitA = 0.6, popT = 0, fpsT = 0, fpsN = 0, quality = 0;
 const _q = new THREE.Quaternion();
+const fpsChan = new MessageChannel(); fpsChan.port1.onmessage = () => frame(performance.now());
+let fpsLastDraw = 0;
+function scheduleFrame() { if (settings.fpsCap === 'max' && !document.hidden) fpsChan.port2.postMessage(0); else requestAnimationFrame(frame); }
 function frame(now) {
-  requestAnimationFrame(frame);
+  scheduleFrame();
+  { const cap = +settings.fpsCap; if (cap > 0) { if (now - fpsLastDraw < 1000 / cap - 0.6) return; fpsLastDraw = now; } }
   const dt = Math.min(0.05, (now - last) / 1000) * cineScale(); last = now;
   processNet();
   const worldRuns = state !== 'paused' || activeRemotes() > 0;
