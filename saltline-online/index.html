@@ -6522,7 +6522,9 @@ const GPU = (() => {
 })();
 if (GPU.software) {
   const w = $('gpuWarn');
-  w.innerHTML = '<button type="button">OK</button><b>Your browser is drawing the game without your graphics card</b> (' + escHtml(GPU.short) + '), so it will lag on every setting. Fix: in Chrome or Edge open Settings → System → turn on <b>Use graphics acceleration when available</b>, then press Relaunch. In Firefox: Settings → General → Performance → untick "Use recommended", tick hardware acceleration, restart.';
+  const nb = /^(nb|nn|no)/i.test(navigator.language || '');
+  if (nb) w.innerHTML = '<button type="button">OK</button><b>Nettleseren tegner spillet uten skjermkortet ditt</b> (' + escHtml(GPU.short) + '), så det lagger uansett innstilling. Løsning: i Chrome åpne ⋮ → <b>Innstillinger → System</b> → slå på <b>Bruk grafikkakselerasjon når tilgjengelig</b> → trykk <b>Start på nytt</b>. I Edge: … → Innstillinger → <b>System og ytelse</b> → samme bryter. Står den allerede på: skriv chrome://gpu i adressefeltet; står det «Software only», oppdater skjermkort-driveren (Lenovo Vantage eller Windows Update) og start PC-en på nytt.';
+  else w.innerHTML = '<button type="button">OK</button><b>Your browser is drawing the game without your graphics card</b> (' + escHtml(GPU.short) + '), so it will lag on every setting. Fix: in Chrome or Edge open Settings → System → turn on <b>Use graphics acceleration when available</b>, then press Relaunch. In Firefox: Settings → General → Performance → untick "Use recommended", tick hardware acceleration, restart.';
   w.hidden = false; w.querySelector('button').onclick = () => { w.hidden = true; };
   if (settings.gfx !== 'low') setTimeout(() => { try { setSetting('gfx', 'low'); applyGfx(); } catch (e) {} }, 0);
 }
