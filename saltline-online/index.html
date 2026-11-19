@@ -4769,6 +4769,83 @@ function openPage(which) {
 }
 function closeModePagesQuiet() { for (const id of ['bpShop', 'bpLocker']) { const e = $(id); if (e) e.hidden = true; } document.body.classList.remove('bp-open'); previewLook = null; for (const b of document.querySelectorAll('.lnav button')) b.classList.toggle('on', b.dataset.page === 'lobby'); }
 
+/* ================= dev tools ================= */
+// Locked until a secret key sequence is typed; only its hash is stored here.
+const devT = { on: false, aim: false, god: false, gi: -1, buf: [], tgt: null };
+function devHash(s) { let h = 0x811c9dc5; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; } return h; }
+const DEV_H = 3860212929;
+function devNote(t) {
+  let n = $('devNote');
+  if (!n) { n = el('div'); n.id = 'devNote'; n.style.cssText = 'position:fixed;left:6px;bottom:4px;font:600 10px/1 system-ui,sans-serif;color:#cfd6dc;opacity:.55;z-index:60;pointer-events:none;letter-spacing:.04em'; document.body.append(n); }
+  n.textContent = t; clearTimeout(n._t); n._t = setTimeout(() => { n.textContent = ''; }, 1400);
+  devDots();
+}
+function devDots() {
+  let d = $('devDots');
+  if (!d) { d = el('div'); d.id = 'devDots'; d.style.cssText = 'position:fixed;left:6px;bottom:18px;display:flex;gap:3px;z-index:60;pointer-events:none;opacity:.6'; document.body.append(d); }
+  d.hidden = !devT.on; d.textContent = '';
+  for (const [k, c] of [['aim', '#e5484d'], ['god', '#46a758']]) { const s = el('i'); s.style.cssText = `width:4px;height:4px;border-radius:2px;background:${devT[k] ? c : '#555'}`; d.append(s); }
+}
+function devGun(step) {
+  const ids = Object.keys(GUNS);
+  devT.gi = ((devT.gi + step) % ids.length + ids.length) % ids.length;
+  const id = ids[devT.gi];
+  if (inv.slots.some(s => s && s.id === id)) { devT.gi = (devT.gi + step + ids.length) % ids.length; return devGun(0); }
+  giveGun(id); devNote(GUNS[id].name);
+}
+window.addEventListener('keydown', e => {
+  if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA')) return;
+  if (e.repeat) return;
+  devT.buf.push([e.code, performance.now()]); if (devT.buf.length > 4) devT.buf.shift();
+  if (devT.buf.length === 4 && devT.buf[3][1] - devT.buf[0][1] < 2500 && devHash(devT.buf.map(b => b[0]).join(',')) === DEV_H) {
+    devT.buf.length = 0; devT.on = !devT.on;
+    if (!devT.on) { devT.aim = false; devT.god = false; }
+    devNote(devT.on ? 'dev on' : 'dev off'); e.preventDefault(); e.stopImmediatePropagation(); return;
+  }
+  if (!devT.on || state !== 'playing') return;
+  const c = e.code; let used = true;
+  if (c === 'KeyK') { devT.aim = !devT.aim; devNote(devT.aim ? 'aim on' : 'aim off'); }
+  else if (c === 'KeyL') { devT.god = !devT.god; if (devT.god && me.alive) me.hp = 100; devNote(devT.god ? 'god on' : 'god off'); }
+  else if (c === 'KeyO') { if (inGame && me.alive && !dropping) devGun(e.shiftKey ? -1 : 1); }
+  else if (c === 'KeyU') { const n = e.shiftKey ? 10000 : 1000; BUCKS.add(n); devNote('+' + n.toLocaleString('nb-NO')); }
+  else used = false;
+  if (used) { e.preventDefault(); e.stopImmediatePropagation(); }
+}, true);
+
+// aimbot: nearest enemy head you can see, closest to where you look
+const _dh = new V3(), _dd = new V3(), _df = new V3();
+function devHead(e, out) {
+  const h = e.model && e.model.hit && e.model.hit.find(m => m.userData.part === 'head');
+  if (h) { h.updateMatrixWorld(true); return h.getWorldPosition(out); }
+  return out.set(e.pos.x, e.pos.y + 1.6, e.pos.z);
+}
+function devTarget() {
+  devT.tgt = null;
+  if (!devT.aim || !inGame || !me.alive || dropping) return null;
+  camera.getWorldDirection(_df);
+  let best = null, bestS = Infinity;
+  for (const e of ents.values()) {
+    if (!e.alive || e.dropping || sameTeam(e, me)) continue;
+    devHead(e, _dh); _dd.copy(_dh).sub(camera.position);
+    const d = _dd.length(); if (d > 250 || d < 0.5) continue;
+    const s = _dd.angleTo(_df) * 40 + d;                     // mostly the one nearest your crosshair
+    if (s < bestS && hasLOS(camera.position, _dh)) { bestS = s; best = e; }
+  }
+  return (devT.tgt = best);
+}
+function devAim(dt, firing) {
+  const t = devTarget(); if (!t || !(firing || adsActive())) return;
+  devHead(t, _dh); _dd.copy(_dh).sub(camera.position);
+  player.yaw = player.yaw + angDiff(player.yaw, Math.atan2(-_dd.x, -_dd.z));
+  player.pitch = clamp(Math.atan2(_dd.y, Math.hypot(_dd.x, _dd.z)), -1.45, 1.45);
+  recoilDebt = 0;
+}
+// shots go exactly at the target's head
+function devShotDir(out) {
+  const t = devT.tgt; if (!devT.aim || !t || !t.alive) return false;
+  devHead(t, _dh); out.copy(_dh).sub(camera.position).normalize(); return true;
+}
+
 /* ================= Game state ================= */
 let MAG = 30; const EYE = 1.62, SLOTS = 10, NET_TAG = 'on1';
 const BOT_NAMES = ['Kestrel', 'Marsh', 'Ondra', 'Vesper', 'Halloran', 'Tamsin', 'Ruiz', 'Okafor', 'Brann', 'Lio', 'Sable', 'Petra', 'Cato', 'Imre'];
@@ -4867,6 +4944,7 @@ function damageEnt(e, dmg, attackerId, crit) {
   if (e.hp <= 0) { e.hp = 0; e.alive = false; e.deadT = 0; e.dc++; e.kb = attackerId; e.d++; onDeath(e, attackerId, crit); }
 }
 function damageMe(dmg, attackerId) {
+  if (devT.god && me.alive) { me.hp = 100; return; }
   if (!inGame || !me.alive || spawnProt > 0 || dropping || BR.phase === 'end' || sameTeam(getEnt(attackerId), me)) return;
   { const sa = Math.min(me.shield || 0, dmg); me.shield = (me.shield || 0) - sa; dmg -= sa; }
   me.hp -= dmg; lastHurt = 0; hurtFlash = Math.min(1, hurtFlash + 0.5); shake = Math.max(shake, 0.25);
@@ -6705,7 +6783,7 @@ function shoot() {
   camera.getWorldDirection(_fw);
   _rt.setFromMatrixColumn(camera.matrixWorld, 0); _up.setFromMatrixColumn(camera.matrixWorld, 1);
   const ang = Math.random() * Math.PI * 2, rad = Math.sqrt(Math.random()) * spread;
-  _fw.addScaledVector(_rt, Math.cos(ang) * rad).addScaledVector(_up, Math.sin(ang) * rad).normalize();
+  _fw.addScaledVector(_rt, Math.cos(ang) * rad).addScaledVector(_up, Math.sin(ang) * rad).normalize(); devShotDir(_fw);
   ray.set(camera.position, _fw); ray.far = 300; ray.near = tpNear();
   const targets = solids.slice();
   for (const e of ents.values()) if (e.alive && !e.dropping) for (const m of e.model.hit) targets.push(m);
@@ -6816,6 +6894,7 @@ function updatePlayer(dt) {
   const il = Math.hypot(ix, iz); if (il > 1) { ix /= il; iz /= il; }
   if (canAct) updateAssist(dt);
   const firing = canAct && !dropping && !buildMode && !editing && (mouseDown || shotQueued || keys.has('KeyF') || keys.has('KeyJ') || touchFire.id !== null || (settings.autofire && autoTarget && (weapon === 1 || (weapon === 3 && autoDist < 20) || autoDist < 2.2)));
+  if (canAct) devAim(dt, firing);
   const ads = adsActive() && canAct;
   const sprinting = canAct && (settings.autoSprint || keys.has('ShiftLeft') || keys.has('ShiftRight') || (touchMove.id !== null && il > 0.95 && iz > 0.7)) && iz > 0 && !ads && !firing && !reload;
   // C while sprinting on the ground: slide. C otherwise: toggle crouch. Jumping stands you back up.
