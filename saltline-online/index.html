@@ -1539,7 +1539,8 @@ const crateC = makeCanvas(256, 256, (g, w, h) => {
 const crateTex = texFrom(crateC), crateNrm = normalFrom(crateC, 2.5);
 
 /* ================= Valley terrain ================= */
-const MS = 2.4;                     // map scale: the valley is 2.4x the original width
+const MS = 4.0;                     // map scale: the valley is 4x the original width
+const MK = MS / 2.4;                // the hand-placed features below were laid out at 2.4
 const BOUND = 62 * MS;
 const sstep = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
 // integer hash: gives the exact same terrain in every browser, which multiplayer needs
@@ -1552,7 +1553,7 @@ function vnoise(x, z) {
 function fbm(x, z) { return vnoise(x, z) * 0.6 + vnoise(x * 2.1 + 5.2, z * 2.1 + 1.3) * 0.28 + vnoise(x * 4.3 + 9.1, z * 4.3 + 7.7) * 0.12; }
 const POND = { x: 24 * MS, z: -20 * MS, r: 15 };
 // cabins: [x, z, rotated?]
-const HOUSES = [[-40, 28, 0], [20, 60, 1], [-56, -44, 1], [72, 16, 0], [-14, -80, 0], [94, -48, 1], [-98, 8, 1], [36, 100, 0], [-82, -40, 0], [40, -84, 1], [-55, 72, 1], [86, 40, 0]].map(([x, z, r]) => [x * MS / 2, z * MS / 2, r]);
+const HOUSES = [[-40, 28, 0], [20, 60, 1], [-56, -44, 1], [72, 16, 0], [-14, -80, 0], [94, -48, 1], [-98, 8, 1], [36, 100, 0], [-82, -40, 0], [40, -84, 1], [-55, 72, 1], [86, 40, 0], [-110, 100, 0], [104, 104, 1], [0, 112, 1], [116, -12, 0], [-114, -30, 1], [62, -112, 0], [-60, -108, 1], [-18, 34, 0], [70, -10, 1], [-90, 50, 0]].map(([x, z, r]) => [x * MS / 2, z * MS / 2, r]);
 var TG_READY = false;
 function terrainH(x, z) { return TG_READY ? meshH(x, z) : terrainH0(x, z); }
 function terrainH0(x, z) {
@@ -1565,10 +1566,10 @@ function terrainH0(x, z) {
   return terrainFeatures(x, z, h);
 }
 var TF = null;
-const HILLS = [[30, 20, 15, 24], [-30, 78, 12, 18], [75, 90, 13, 19], [-118, 64, 11, 17]];          // x, z, height, radius
-const MESAS = [[-58, -4, 7, 14], [6, -118, 8, 13], [112, -100, 7, 12]];                          // x, z, height, radius (ramp faces the middle)
-const LAKE = { x: -10, z: -45, r: 22 };
-const RIVER = [[-132, -114], [-82, -86], [-42, -66], [-10, -45], [20, -34], [57, -48]];
+const HILLS = [[30, 20, 15, 24], [-30, 78, 12, 18], [75, 90, 13, 19], [-118, 64, 11, 17], [118, 32, 14, 22], [-70, 130, 13, 20], [135, -40, 12, 18], [-140, -10, 15, 22], [20, 140, 12, 19]].map(([x, z, h, r]) => [x * MK, z * MK, h * Math.sqrt(MK), r * MK]);          // x, z, height, radius
+const MESAS = [[-58, -4, 7, 14], [6, -118, 8, 13], [112, -100, 7, 12], [-110, -128, 8, 13], [130, 118, 7, 13]].map(([x, z, h, r]) => [x * MK, z * MK, h * Math.sqrt(MK), r * MK]);                          // x, z, height, radius (ramp faces the middle)
+const LAKE = { x: -10 * MK, z: -45 * MK, r: 22 * MK };
+const RIVER = [[-132, -114], [-82, -86], [-42, -66], [-10, -45], [20, -34], [57, -48], [92, -70], [130, -66]].map(([x, z]) => [x * MK, z * MK]);
 function riverDist(x, z) {
   let best = 1e9;
   for (let i = 0; i < RIVER.length - 1; i++) {
@@ -1656,7 +1657,7 @@ function groundPaint(x, z, h, ny, out) {
   out.lerp(_t2, 1 - gm);
   return gm;
 }
-const TG = { N: 12 * 24 + 1, step: 540 / (12 * 24), min: -270 };
+const TG = { N: 12 * 36 + 1, step: 290 * MS / (12 * 36), min: -145 * MS };
 const TGRID = new Float32Array(TG.N * TG.N);     // the terrain mesh's own vertex heights
 // height of the triangulated terrain surface (what you actually see), not of the smooth function
 function meshH(x, z) {
@@ -1860,7 +1861,7 @@ for (const [hx, hz, rot] of HOUSES) {
 // --- crates, some stacked
 const crateGeo = new THREE.BoxGeometry(1.3, 1.3, 1.3);
 const crateMat = new THREE.MeshStandardMaterial({ map: crateTex, normalMap: crateNrm, roughness: 0.85 });
-for (let i = 0; i < 40; i++) {
+for (let i = 0; i < 75; i++) {
   let x = 0, z = 0, ok = false;
   for (let t = 0; t < 40 && !ok; t++) { x = (R() - 0.5) * 100 * MS; z = (R() - 0.5) * 100 * MS; ok = freeSpot(x, z, 1.5, 50 * MS) && Math.hypot(x, z) > 5; }
   if (!ok) continue;
@@ -1893,13 +1894,13 @@ const rockGeo = (() => {
   return g;
 })();
 const rockMat = new THREE.MeshStandardMaterial({ map: rockTex, normalMap: rockNrm, vertexColors: true, roughness: 0.9, envMapIntensity: 0.4 });
-const rocks = new THREE.InstancedMesh(rockGeo, rockMat, 90);
+const rocks = new THREE.InstancedMesh(rockGeo, rockMat, 170);
 rocks.castShadow = rocks.receiveShadow = true; rocks.userData.surface = 'rock';
 {
   const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), s = new V3(), p = new V3();
   let n = 0;
-  for (let i = 0; i < 600 && n < 90; i++) {
-    const big = n < 20, sc = big ? 1.5 + R() * 1.2 : 0.45 + R() * 0.7;
+  for (let i = 0; i < 1400 && n < 170; i++) {
+    const big = n < 36, sc = big ? 1.5 + R() * 1.2 : 0.45 + R() * 0.7;
     const x = (R() - 0.5) * 120 * MS, z = (R() - 0.5) * 120 * MS;
     if (!freeSpot(x, z, sc * 1.2, 70 * MS)) continue;
     const base = terrainH(x, z);
@@ -1913,7 +1914,7 @@ scene.add(rocks);
 // --- trees: a Norwegian valley. Norway spruce, Scots pine, silver birch and rowan, grown branch by branch at
 //     their real size (spruce up to ~20 m). Every needle spray and leaf twig is painted into one texture atlas,
 //     so each species is a single draw call.
-const TREES = 460;
+const TREES = 980;
 const up3 = new V3(0, 1, 0);
 const FA = 1024;                                    // foliage atlas size
 const FR = {                                        // atlas regions [x, y, w, h] in canvas pixels
@@ -2229,8 +2230,8 @@ for (const sp of SPECIES) {
   const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), s = new V3(), p = new V3(), col = new THREE.Color();
   const cum = []; SPECIES.reduce((a, sp, i) => (cum[i] = a + sp.w), 0);
   let placed = 0;
-  for (let i = 0; i < 5000 && placed < TREES; i++) {
-    const inside = placed < 300;
+  for (let i = 0; i < 12000 && placed < TREES; i++) {
+    const inside = placed < 700;
     const a = R() * Math.PI * 2, d = inside ? 6 + Math.sqrt(R()) * 52 * MS : 62 * MS + R() * 46 * MS;
     const x = Math.cos(a) * d, z = Math.sin(a) * d, sc = 0.78 + R() * 0.45, pick = R() * cum[cum.length - 1];
     let v = cum.findIndex(c => pick <= c); if (v < 0) v = 0;
@@ -2268,7 +2269,7 @@ scene.add(...treeTrunks, ...treeLeaves);
   }));
   farPineTex.wrapS = farPineTex.wrapT = THREE.ClampToEdgeWrapping;
   const farMat = new THREE.MeshLambertMaterial({ map: farPineTex, alphaTest: 0.4 });
-  const FAR = isTouch ? 500 : 1300;
+  const FAR = isTouch ? 600 : 1900;
   const far = new THREE.InstancedMesh(cardGeo([0, 1].map(k => ({ p: new V3(0, 0, 0), right: new V3(k ? 0 : 2.4, 0, k ? 2.4 : 0), up: new V3(0, 15, 0), n: up3 }))), farMat, FAR);
   let n = 0;
   for (let i = 0; i < FAR * 4 && n < FAR; i++) {
@@ -2289,7 +2290,7 @@ scene.add(...treeTrunks, ...treeLeaves);
     }
     return atlasUV(cardGeo(cards), 'bush');
   })();
-  const bushes = new THREE.InstancedMesh(bushGeo, bushMat, 380);
+  const bushes = new THREE.InstancedMesh(bushGeo, bushMat, 760);
   n = 0;
   for (let i = 0; i < 2500 && n < 380; i++) {
     const x = (R() - 0.5) * 150 * MS, z = (R() - 0.5) * 150 * MS, h = terrainH(x, z);
@@ -2317,7 +2318,7 @@ scene.add(...treeTrunks, ...treeLeaves);
     for (let i = 0; i < p.count; i++) { v.fromBufferAttribute(p, i); v.multiplyScalar(0.8 + fbm(v.x * 2 + 3, v.z * 2 + v.y) * 0.4); v.y *= 0.6; p.setXYZ(i, v.x, v.y, v.z); cc.push(0.92, 0.92, 0.9); }
     g.setAttribute('color', new THREE.Float32BufferAttribute(cc, 3)); g.computeVertexNormals(); return g;
   })();
-  const pebbles = new THREE.InstancedMesh(pebbleGeo, rockMat, 900);
+  const pebbles = new THREE.InstancedMesh(pebbleGeo, rockMat, 1500);
   n = 0;
   for (let i = 0; i < 2600 && n < 900; i++) {
     const a = R() * Math.PI * 2, d = Math.sqrt(R()) * 72 * MS, x = Math.cos(a) * d, z = Math.sin(a) * d, h = terrainH(x, z);
@@ -2335,7 +2336,7 @@ scene.add(...treeTrunks, ...treeLeaves);
   }));
   const endMat = new THREE.MeshStandardMaterial({ map: ringTex, roughness: 0.85 });
   const logGeo = new THREE.CylinderGeometry(0.3, 0.34, 1, 12);
-  for (let i = 0, made = 0; i < 220 && made < 22; i++) {
+  for (let i = 0, made = 0; i < 500 && made < 40; i++) {
     const x = (R() - 0.5) * 96 * MS, z = (R() - 0.5) * 96 * MS, len = 3 + R() * 2.5, ang = R() * Math.PI;
     if (!freeSpot(x, z, len / 2 + 0.5, 52 * MS) || pathDist(x, z) < 3 || Math.hypot(x, z) < 6) continue;
     const dx = Math.cos(ang), dz = Math.sin(ang), h0 = terrainH(x - dx * len / 2, z - dz * len / 2), h1 = terrainH(x + dx * len / 2, z + dz * len / 2);
@@ -2345,7 +2346,7 @@ scene.add(...treeTrunks, ...treeLeaves);
     made++;
   }
   const stumpGeo = new THREE.CylinderGeometry(0.3, 0.42, 0.55, 12);
-  for (let i = 0, made = 0; i < 160 && made < 20; i++) {
+  for (let i = 0, made = 0; i < 400 && made < 36; i++) {
     const x = (R() - 0.5) * 100 * MS, z = (R() - 0.5) * 100 * MS;
     if (!freeSpot(x, z, 0.6, 54 * MS) || pathDist(x, z) < 2) continue;
     const b = terrainH(x, z); addMesh(stumpGeo, [trunkMat, endMat, trunkMat], x, b + 0.22, z, 'wood').rotation.y = R() * 6;
@@ -2560,8 +2561,8 @@ function validStand(x, z) {
   return true;
 }
 const spawnPoints = [];
-for (let i = 0; i < 400 && spawnPoints.length < 22; i++) {
-  const a = R() * Math.PI * 2, d = 10 + R() * 46 * MS, x = Math.cos(a) * d, z = Math.sin(a) * d;
+for (let i = 0; i < 600 && spawnPoints.length < 30; i++) {
+  const a = R() * Math.PI * 2, d = 10 + R() * 30 * MS, x = Math.cos(a) * d, z = Math.sin(a) * d;
   if (validStand(x, z) && spawnPoints.every(p => Math.hypot(p.x - x, p.z - z) > 9)) spawnPoints.push(new V3(x, terrainH(x, z), z));
 }
 function randomPoint() {
@@ -4284,7 +4285,7 @@ function planChests(matchId) {
     spots.push([x, z]); return true;
   };
   for (const [hx, hz] of HOUSES) { if (spots.length >= 8) break; let n = 0; for (let k = 0; k < 30 && n < 1; k++) { const a = rnd() * 6.283, d = 5.2 + rnd() * 3; if (tryAdd(hx + Math.cos(a) * d, hz + Math.sin(a) * d)) n++; } }
-  for (let k = 0; k < 900 && spots.length < 20; k++) { const a = rnd() * 6.283, d = Math.sqrt(rnd()) * 70 * MS; tryAdd(Math.cos(a) * d, Math.sin(a) * d); }
+  for (let k = 0; k < 1600 && spots.length < 34; k++) { const a = rnd() * 6.283, d = Math.sqrt(rnd()) * 70 * MS; tryAdd(Math.cos(a) * d, Math.sin(a) * d); }
   spots.forEach(([x, z], i) => {
     const c = { i, x, z, y: terrainH(x, z), rot: rnd() * 6.283, open: false, openT: 0, glow: 1, gen: 0, shutT: 0, loot: rollLoot(mulberry(hashStr('loot' + matchId + ':' + i))) };
     buildChestVisual(c); LOOT.chests.push(c);
@@ -4568,6 +4569,7 @@ function soldierShadowLod() {
 }
 function emoteCancel() { if (selfView.emote && (Math.hypot(player.vel.x, player.vel.z) > 0.8 || mouseDown || !me.alive || buildMode || dropping)) selfView.emote = null; }
 function arsenalFrame(dt) {
+  { const v = selfView.emote ? 'hidden' : ''; const c = $('cross'); if (c && c.style.visibility !== v) c.style.visibility = v; }
   updateBullets(dt);
   emoteCancel(); shieldHud();
   shadowLodT -= dt; if (shadowLodT <= 0) { shadowLodT = 0.5; soldierShadowLod(); }
@@ -4880,13 +4882,14 @@ window.addEventListener('keydown', e => {
   if (/^Digit\d$/.test(dc) && devT.buf.length === 4 && devT.buf[3][1] - devT.buf[0][1] < 4000 && devHash(devT.buf.map(b => b[0]).join(',')) === DEV_H) {
     devT.buf.length = 0; devT.on = !devT.on;
     if (!devT.on) { devT.aim = false; devT.god = false; }
-    devNote(devT.on ? 'dev on · K L O U' : 'dev off'); e.preventDefault(); e.stopImmediatePropagation(); return;
+    devNote(devT.on ? 'dev on · K L O U Y' : 'dev off'); e.preventDefault(); e.stopImmediatePropagation(); return;
   }
   if (!devT.on || state !== 'playing') return;
   const c = e.code; let used = true;
   if (c === 'KeyK') { devT.aim = !devT.aim; devNote(devT.aim ? 'aim on' : 'aim off'); }
   else if (c === 'KeyL') { devT.god = !devT.god; if (devT.god && me.alive) me.hp = 100; devNote(devT.god ? 'god on' : 'god off'); }
   else if (c === 'KeyO') { if (inGame && me.alive && !dropping) devGun(e.shiftKey ? -1 : 1); }
+  else if (c === 'KeyY') { store.set('bucks', 250); renderBucks(); devNote('onebucks reset'); }
   else if (c === 'KeyU') { const n = e.shiftKey ? 10000 : 1000; BUCKS.add(n); devNote('+' + n.toLocaleString('nb-NO')); }
   else used = false;
   if (used) { e.preventDefault(); e.stopImmediatePropagation(); }
@@ -4908,8 +4911,9 @@ function devTarget() {
     if (!e.alive || e.dropping || sameTeam(e, me)) continue;
     devHead(e, _dh); _dd.copy(_dh).sub(camera.position);
     const d = _dd.length(); if (d > 250 || d < 0.5) continue;
-    const s = _dd.angleTo(_df) * 40 + d;                     // mostly the one nearest your crosshair
-    if (s < bestS && hasLOS(camera.position, _dh)) { bestS = s; best = e; }
+    let s = _dd.angleTo(_df) * 40 + d;                       // mostly the one nearest your crosshair
+    if (s < bestS && !hasLOS(camera.position, _dh)) s += 25;
+    if (s < bestS) { bestS = s; best = e; }
   }
   return (devT.tgt = best);
 }
@@ -4925,10 +4929,12 @@ function devShotDir(out) {
   const t = devT.tgt; if (!devT.aim || !t || !t.alive) return false;
   devHead(t, _dh); out.copy(_dh).sub(camera.position).normalize(); return true;
 }
+// with the aimbot locked on, bullets ignore walls, builds and terrain
+function devWall() { return devT.aim && devT.tgt && devT.tgt.alive; }
 
 /* ================= Game state ================= */
 let MAG = 30; const EYE = 1.62, SLOTS = 10, NET_TAG = 'on1';
-const BOT_NAMES = ['Kestrel', 'Marsh', 'Ondra', 'Vesper', 'Halloran', 'Tamsin', 'Ruiz', 'Okafor', 'Brann', 'Lio', 'Sable', 'Petra', 'Cato', 'Imre'];
+const BOT_NAMES = ['Fjell', 'Ravn', 'Skarv', 'Tindra', 'Odin', 'Juno', 'Brisk', 'Nova', 'Grim', 'Saga', 'Hawk', 'Linn', 'Kestrel', 'Marsh', 'Ondra', 'Vesper', 'Halloran', 'Tamsin', 'Ruiz', 'Okafor', 'Brann', 'Lio', 'Sable', 'Petra', 'Cato', 'Imre'];
 const player = { pos: new V3(), vel: new V3(), yaw: 0, pitch: 0, onGround: true };
 const me = { id: 'me', kind: 'me', name: settings.name, color: (store.get('color', Math.floor(Math.random() * PAL.length)) | 0) % PAL.length,
   pos: player.pos, vel: player.vel, yaw: 0, pitch: 0, hp: 100, alive: false, k: 0, d: 0, dc: 0, kb: null, sq: 0, se: [0, 0, 0], streak: 0 };
@@ -5182,7 +5188,7 @@ const CTF_CAPS = 3, CTF_TIME = 480, CTF_COL = { R: 0xff4a3a, B: 0x3a8cff };
 const CTF = { flags: {}, score: { R: 0, B: 0 }, teams: {}, msgT: 0, built: false };
 function ctfBasePos(t) {
   const sx = t === 'R' ? -1 : 1;
-  for (let k = 0; k < 60; k++) { const x = sx * (BOUND * 0.6 - k * 1.5), z = (k % 7 - 3) * 3; if (validStand(x, z)) return new V3(x, terrainH(x, z), z); }
+  for (let k = 0; k < 60; k++) { const x = sx * (BOUND * 0.4 - k * 1.5), z = (k % 7 - 3) * 3; if (validStand(x, z)) return new V3(x, terrainH(x, z), z); }
   return new V3(sx * 40, terrainH(sx * 40, 0), 0);
 }
 function ctfFlagMesh(t) {
@@ -5816,7 +5822,7 @@ var LOBBY_OK = false;
 const MODES = { 1: 'Solo', 2: 'Duos', 3: 'Trios', 4: 'Squads', 5: 'Free for all', 6: 'Capture the flag' };
 const FFA_KILLS = 25, FFA_TIME = 360;
 function teamSize() { return BR.mode === 5 ? 1 : BR.mode === 6 ? 6 : (BR.mode || 1); }
-const MODE_SLOTS = { 1: 10, 2: 12, 3: 12, 4: 12, 5: 10, 6: 12 };
+const MODE_SLOTS = { 1: 20, 2: 20, 3: 21, 4: 20, 5: 14, 6: 16 };
 let myMode = clamp(store.get('mode', 1) | 0, 1, 6) || 1;
 let myLeader = null;               // the leader's id while I'm in someone else's party
 const invited = new Set();         // ids I invited (as leader)
@@ -6364,7 +6370,7 @@ function syncRemoteBuilds(owner, str) {
 /* ================= The gas: a safe zone that keeps shrinking ================= */
 // Every machine works the same zone plan out from the match number, so nothing has to be sent over the network.
 // [wait s, shrink s, radius at the end of the shrink, damage per second while you're outside]
-const GAS_PHASES = [[45, 40, 84, 2], [28, 32, 54, 3], [24, 26, 32, 5], [20, 22, 16, 8], [16, 20, 6, 10], [12, 16, 0, 12]].map(([w, s_, r, d]) => [w, s_, r * MS / 2, d]);
+const GAS_PHASES = [[45, 40, 84, 2], [28, 32, 54, 3], [24, 26, 32, 5], [20, 22, 16, 8], [16, 20, 6, 10], [12, 16, 0, 12]].map(([w, s_, r, d]) => [Math.round(w * 1.3), Math.round(s_ * 1.35), r * MS / 2, d]);
 const GAS = { planId: -1, plan: [], cx: 0, cz: 0, r: 80 * MS, nx: 0, nz: 0, nr: 80 * MS, phase: 0, shrinking: false, left: 0, dps: 1, tick: 1, outside: false, fx: 0 };
 knownNames.set('gas', 'The gas'); knownNames.set('fall', 'A long fall');
 function planGas(id) {
@@ -6684,7 +6690,23 @@ let tpDist = 3.2;
 // aiming down sights always goes to the first-person view: the gun comes up to your eye with its red dot (or bead)
 function thirdPerson() { return (settings.camera !== 'first' || !!selfView.emote) && inGame && me.alive && state !== 'menu' && !adsActive(); }
 function tpNear() { return thirdPerson() && !dropping ? camera.position.distanceTo(_tpH) + 0.35 : 0; }
+let emoCamT = 0, emoCamD = 3.4;
+function emoteCam(dt) {
+  emoCamT += dt;
+  const a = player.yaw + Math.sin(emoCamT * 0.45) * 0.55;                  // in front of you, drifting side to side
+  _tpH.set(player.pos.x, player.pos.y + 1.1, player.pos.z);
+  _tpW.set(-Math.sin(a), 0.16, -Math.cos(a)).normalize();
+  _tpRay.set(_tpH, _tpW); _tpRay.far = 3.7; _tpRay.near = 0;
+  const h = _tpRay.intersectObjects(solids, false)[0];
+  const want = h ? Math.max(0.9, h.distance - 0.3) : 3.4;
+  emoCamD += (want - emoCamD) * Math.min(1, dt * 6);
+  camera.position.copy(_tpH).addScaledVector(_tpW, emoCamD);
+  const gy = terrainH(camera.position.x, camera.position.z) + 0.35; if (camera.position.y < gy) camera.position.y = gy;
+  camera.lookAt(_tpH.x, _tpH.y + 0.1, _tpH.z);
+}
 function tpCamera(dt) {
+  if (selfView.emote) { emoteCam(dt); return; }
+  emoCamT = 0; emoCamD = 3.4;
   const ads = vm.ads;
   _tpH.set(player.pos.x, player.pos.y + EYE + 0.12 - crouchT * (slideT > 0 ? 0.78 : 0.58), player.pos.z);   // pivot just above the head
   camera.position.copy(_tpH); camera.updateMatrixWorld();
@@ -6880,7 +6902,7 @@ function shoot() {
   const ang = Math.random() * Math.PI * 2, rad = Math.sqrt(Math.random()) * spread;
   _fw.addScaledVector(_rt, Math.cos(ang) * rad).addScaledVector(_up, Math.sin(ang) * rad).normalize(); devShotDir(_fw);
   ray.set(camera.position, _fw); ray.far = 300; ray.near = tpNear();
-  const targets = solids.slice();
+  const targets = devWall() ? [] : solids.slice();
   for (const e of ents.values()) if (e.alive && !e.dropping) for (const m of e.model.hit) targets.push(m);
   const hits = ray.intersectObjects(targets, false); ray.near = 0;
   gun.updateMatrixWorld(true);
