@@ -1103,7 +1103,8 @@ const sfx = (() => {
 
 /* ================= Renderer / scene ================= */
 const canvas = $('game');
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+const LOW_AT_START = (() => { try { return /low/.test(localStorage.getItem('onenight-gfx') || ''); } catch (e) { return false; } })();
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: !LOW_AT_START, powerPreference: 'high-performance' });
 let pixelRatio = Math.min(window.devicePixelRatio || 1, isTouch ? 1.25 : 1.5);
 renderer.setPixelRatio(pixelRatio);
 renderer.shadowMap.enabled = true;
@@ -2128,7 +2129,7 @@ scene.add(...treeTrunks, ...treeLeaves);
     far.setMatrixAt(n, m4.compose(p.set(x, terrainH(x, z) - 0.3, z), q.setFromAxisAngle(up3, R() * 6), s.set(sc, sc * (0.9 + R() * 0.4), sc)));
     far.setColorAt(n++, col.setRGB(t * 0.95, t * 1.05, t * 0.9));
   }
-  far.count = n; far.frustumCulled = false; scene.add(far);
+  far.count = n; far.frustumCulled = false; scene.add(far); (scene.userData.lowHide || (scene.userData.lowHide = [])).push(far);
   // --- shrubs: low leafy bushes scattered through the meadows
   const bushGeo = (() => {
     const cards = [];
@@ -2160,7 +2161,7 @@ scene.add(...treeTrunks, ...treeLeaves);
     reeds.setMatrixAt(n, m4.compose(p.set(x, terrainH(x, z) - 0.05, z), q.setFromAxisAngle(up3, R() * 6), s.set(sc, sc, sc)));
     reeds.setColorAt(n++, col.setRGB(0.62 + R() * 0.2, 0.6 + R() * 0.15, 0.3));
   }
-  reeds.count = n; reeds.frustumCulled = false; scene.add(reeds);
+  reeds.count = n; reeds.frustumCulled = false; scene.add(reeds); (scene.userData.lowHide || (scene.userData.lowHide = [])).push(reeds);
   // --- loose stones and pebbles
   const pebbleGeo = (() => {
     const g = new THREE.IcosahedronGeometry(1, 1), p = g.attributes.position, v = new V3(), cc = [];
@@ -5942,10 +5943,16 @@ $('setBtn').addEventListener('click', openSettings);
 $('setBtn2').addEventListener('click', openSettings);
 // frames per second, when asked for
 let fpsAcc = 0, fpsCnt = 0, fpsLast = performance.now();
+let worstFrame = 0, lastFrameAt = 0, mainCalls = 0;
 function updateFpsBox() {
   if (!settings.fps) return;
   const now = performance.now(); fpsCnt++;
-  if (now - fpsLast > 500) { $('fpsBox').textContent = Math.round(fpsCnt * 1000 / (now - fpsLast)) + ' FPS · ' + GPU.short; fpsCnt = 0; fpsLast = now; }
+  if (now - fpsLast > 500) {
+    const fps = Math.round(fpsCnt * 1000 / (now - fpsLast)), cv = renderer.domElement;
+    $('fpsBox').textContent = fps + ' FPS · ' + (worstFrame | 0) + ' ms worst · ' + GPU.short + ' · ' + cv.width + '×' + cv.height + ' · ' + mainCalls + ' draws · ' + settings.gfx + (renderer.getContext().getContextAttributes().antialias ? ' AA' : '');
+    fpsCnt = 0; fpsLast = now; worstFrame = 0;
+  }
+  if (lastFrameAt) worstFrame = Math.max(worstFrame, now - lastFrameAt); lastFrameAt = now;
 }
 
 /* ================= Third-person camera ================= */
@@ -6724,6 +6731,7 @@ function applyGfx() {
   grass.count = Math.floor(grass.userData.full * [0, 0.25, 0.5, 1][settings.grass | 0]);
   sun.castShadow = !!settings.shadows;
   camera.far = settings.gfx === 'low' ? 420 : 1100; camera.updateProjectionMatrix();
+  for (const o of scene.userData.lowHide || []) o.visible = settings.gfx !== 'low';
   renderer.setPixelRatio(pixelRatio); resize();
 }
 function resize() {
@@ -6800,7 +6808,7 @@ function frame(now) {
   if (sunCheckT <= 0) { sunCheckT = 0.15; sunSeen = hasLOS(camera.position, vD.copy(sunDirN).multiplyScalar(70).add(camera.position)) ? 1 : 0; }
   gunSun.intensity += ((sunSeen ? 2.8 : 0.5) - gunSun.intensity) * Math.min(1, dt * 6);
   renderer.clear();
-  if (state === 'menu' && !inGame) renderLobbyStage(dt); else renderer.render(scene, camera);
+  if (state === 'menu' && !inGame) renderLobbyStage(dt); else { renderer.render(scene, camera); mainCalls = renderer.info.render.calls; }
   myCanopy.visible = false;
   if (myCanopy.visible) { myCanopy.position.set(player.pos.x, player.pos.y + 0.4, player.pos.z); myCanopy.rotation.y = player.yaw; }
   if (inGame && me.alive && !dropping && !thirdPerson()) { renderer.clearDepth(); renderer.render(gunScene, gunCam); }
