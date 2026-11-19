@@ -51,7 +51,7 @@ body{background:var(--ink);color:var(--salt);font-family:var(--mono);touch-actio
 .lnav button.on{background:var(--apricot);color:var(--ink);border-color:var(--apricot);font-weight:600}
 .lnav button:hover:not(.on){border-color:rgba(241,232,218,.5)}
 .lchip{font-size:12px;letter-spacing:.08em;padding:7px 12px;border:1px solid rgba(241,232,218,.25);background:rgba(8,8,22,.6);white-space:nowrap;color:#9fe39f}
-.lprofile{position:absolute;left:24px;top:84px;width:270px;max-height:max(220px,calc(44vh - 20px));overflow-y:auto;overflow-x:hidden;display:flex;flex-direction:column;gap:12px;padding:16px;background:rgba(14,12,28,.78);border:1px solid rgba(241,232,218,.14);backdrop-filter:blur(4px)}
+.lprofile{position:absolute;left:24px;top:84px;width:290px;max-height:max(220px,calc(100vh - 230px));overflow-y:auto;overflow-x:hidden;display:flex;flex-direction:column;gap:12px;padding:16px;background:rgba(14,12,28,.78);border:1px solid rgba(241,232,218,.14);backdrop-filter:blur(4px)}
 .lprofile.flash{animation:lflash 1.2s}
 @keyframes lflash{0%,100%{box-shadow:none}30%{box-shadow:0 0 0 2px var(--apricot)}}
 .stats{display:grid;grid-template-columns:1fr 1fr;gap:6px}
@@ -60,6 +60,27 @@ body{background:var(--ink);color:var(--salt);font-family:var(--mono);touch-actio
 .stats span{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--salt-dim)}
 .lprofile .net{max-width:none}
 #slotLabels{position:absolute;inset:0;pointer-events:none;z-index:1}
+.lseason{display:flex;align-items:baseline;justify-content:space-between;margin:-16px -16px 2px;padding:10px 16px;background:linear-gradient(90deg,rgba(95,225,255,.22),rgba(95,225,255,.04));border-bottom:1px solid rgba(95,225,255,.3)}
+.lseason b{font-family:var(--display);font-weight:900;font-size:26px;text-transform:uppercase;letter-spacing:.02em}.lseason span{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--salt-dim)}
+.lvcard{display:flex;gap:12px;align-items:center}.lvbadge{width:62px;flex:none}.lvbadge svg{width:100%;display:block;filter:drop-shadow(0 3px 6px rgba(0,0,0,.5))}
+.lvinfo{flex:1;min-width:0}.lvnum{font-family:var(--display);font-weight:900;font-size:22px;text-transform:uppercase;line-height:1}.lvnum b{font-size:34px;color:#fff}
+.lvbar{height:7px;background:rgba(241,232,218,.12);margin:6px 0 4px;overflow:hidden}.lvbar i{display:block;height:100%;background:linear-gradient(90deg,#5fe1ff,#a6f06a)}
+.lvtxt{font-size:11px;letter-spacing:.06em}.lvnext{font-size:10.5px;color:#ffd84a;letter-spacing:.04em;margin-top:2px}
+.chhead span{float:right;color:var(--salt-dim);letter-spacing:.06em;text-transform:none}
+#chList{display:flex;flex-direction:column;gap:6px}
+.chrow{display:grid;grid-template-columns:1fr auto;gap:3px 8px;padding:7px 9px;background:rgba(241,232,218,.05);border-left:3px solid #5fe1ff}
+.chrow.done{border-left-color:#8fe08a;opacity:.7}.cht{font-size:12px;font-weight:600}.chn{font-size:12px;text-align:right}
+.chb{grid-column:1;height:5px;background:rgba(241,232,218,.12);align-self:center}.chb i{display:block;height:100%;background:#5fe1ff}.chrow.done .chb i{background:#8fe08a}
+.chr{grid-column:1 / -1;font-size:10.5px;color:#ffd84a;letter-spacing:.04em}
+.lmodeban{margin:-16px -16px 2px;padding:7px 10px;background:#5fe1ff;color:#08121c;font-family:var(--display);font-weight:900;font-size:18px;text-transform:uppercase;text-align:center;letter-spacing:.03em;clip-path:polygon(0 0,100% 0,97% 100%,0 100%)}
+.fillbtn{flex:1;font-weight:600}.fillbtn.off{opacity:.65}
+.lfoot{position:absolute;left:0;right:0;bottom:0;height:34px;display:flex;align-items:center;gap:18px;padding:0 24px;background:rgba(6,8,18,.82);border-top:1px solid rgba(241,232,218,.1);z-index:2;font-size:12px}
+.lfp{color:#8fe08a;font-weight:600;letter-spacing:.1em;text-transform:uppercase}.lfh{color:var(--salt-dim);flex:1}
+.lfb{font:inherit;font-size:12px;background:none;border:0;color:var(--salt);cursor:pointer;letter-spacing:.06em;padding:4px 6px}.lfb:hover{color:#5fe1ff}
+.linfo{position:absolute;right:24px;top:76px;font-size:10.5px;line-height:1.5;text-align:center;color:var(--salt-dim);z-index:2;letter-spacing:.04em}
+.newsbox{position:absolute;inset:0;background:rgba(4,6,14,.6);display:flex;align-items:center;justify-content:center;z-index:20}
+.newsin{width:min(420px,92vw);max-height:80vh;overflow:auto;padding:18px;background:rgba(14,12,28,.96);border:1px solid rgba(95,225,255,.35);display:flex;flex-direction:column;gap:10px}
+.newsit{display:flex;flex-direction:column;gap:2px}.newsit b{font-size:13px;color:#5fe1ff}.newsit span{font-size:12px;color:var(--salt-dim);line-height:1.4}
 .ltop,.lprofile,.lmode,.lbottom{z-index:2}
 @media (max-width:1440px){.lmode{width:290px}.lprofile{width:250px}}
 .slotlab{position:absolute;transform:translate(-50%,-100%);display:flex;flex-direction:column;align-items:center;gap:2px;white-space:nowrap;text-shadow:0 1px 3px rgba(0,0,0,.9)}
@@ -70,12 +91,12 @@ body{background:var(--ink);color:var(--salt);font-family:var(--mono);touch-actio
 .slotplus{position:absolute;transform:translate(-50%,-50%);width:54px;height:54px;font:600 30px var(--mono);line-height:1;color:var(--salt);background:rgba(8,8,22,.35);border:2px dashed rgba(241,232,218,.75);cursor:pointer;pointer-events:auto}
 .slotplus:hover{border-color:var(--apricot);color:var(--apricot)}
 .slotplus.off{opacity:.35;cursor:default}
-.lbottom{position:absolute;left:24px;bottom:calc(20px + env(safe-area-inset-bottom,0px));width:380px;display:flex;flex-direction:column;gap:6px}
+.lbottom{position:absolute;left:24px;bottom:calc(46px + env(safe-area-inset-bottom,0px));width:380px;display:flex;flex-direction:column;gap:6px}
 #partyLog{display:flex;flex-direction:column;gap:3px;font-size:13px}
 #partyLog div{text-shadow:0 1px 3px rgba(0,0,0,.95);transition:opacity .6s}
 #partyLog div i{font-style:normal;opacity:.6;margin-right:6px}
 #partyLog div b{color:#9fe39f;font-weight:600}
-.lmode{position:absolute;right:24px;bottom:calc(20px + env(safe-area-inset-bottom,0px));width:330px;display:flex;flex-direction:column;gap:9px;padding:16px;background:rgba(14,12,28,.82);border:1px solid rgba(241,232,218,.14);backdrop-filter:blur(4px)}
+.lmode{position:absolute;right:24px;bottom:calc(46px + env(safe-area-inset-bottom,0px));width:330px;display:flex;flex-direction:column;gap:9px;padding:16px;background:rgba(14,12,28,.82);border:1px solid rgba(241,232,218,.14);backdrop-filter:blur(4px)}
 .lmodehead{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--salt-dim);text-align:center}
 .lmodename{font-family:var(--display);font-weight:900;font-size:46px;line-height:.9;text-transform:uppercase;text-align:center}
 .lmodesub{font-size:12px;color:var(--salt-dim);text-align:center;min-height:1.2em}
@@ -94,6 +115,7 @@ button.mini.wide{width:100%;padding:8px}
   .lprofile{left:12px;right:12px;top:62px;width:auto;max-height:30vh;min-height:0;padding:10px;gap:8px}
   .stats{grid-template-columns:repeat(4,1fr)}.stats b{font-size:20px}
   .lbottom{left:12px;right:12px;width:auto;bottom:calc(240px + env(safe-area-inset-bottom,0px))}#partyLog{display:none}
+  .lfoot,.linfo{display:none}.lmodeban{display:none}
   .lmode{left:12px;right:12px;width:auto;bottom:calc(10px + env(safe-area-inset-bottom,0px));padding:10px;gap:6px}.lmodename{font-size:32px}.btn.play{font-size:30px;padding:8px}
 }
 /* short but wide screens (a laptop with display scaling or browser zoom): keep the panels at the sides, just smaller */
@@ -103,8 +125,9 @@ button.mini.wide{width:100%;padding:8px}
   .lprofile .lhead{margin-bottom:2px}.field input[type=text]{padding:5px 7px;font-size:13px}
   .stats{gap:4px}.stats div{padding:4px 7px}.stats b{font-size:18px}.stats span{font-size:9px;letter-spacing:.1em}
   .lprofile .net{font-size:11px;line-height:1.4}
-  .lbottom{left:14px;width:300px;bottom:10px}#partyLog{font-size:12px}#partyLog div:nth-last-child(n+4){display:none}
-  .lmode{right:14px;bottom:10px;width:250px;padding:10px;gap:6px}
+  .lbottom{left:14px;width:300px;bottom:34px}#partyLog{font-size:12px}#partyLog div:nth-last-child(n+3){display:none}
+  .lmode{right:14px;bottom:30px;width:250px;padding:10px;gap:6px}.lmodeban{margin:-10px -10px 0;font-size:14px;padding:4px}
+  .lfoot{height:26px;font-size:11px;padding:0 14px}.linfo{display:none}.lseason{margin:-10px -10px 0;padding:6px 10px}.lseason b{font-size:20px}.lvbadge{width:46px}.lvnum b{font-size:26px}.chrow{padding:5px 7px}
   .lmodehead{font-size:10px}.lmodename{font-size:30px}.lmodesub{font-size:11px;min-height:0}button.mini.wide{padding:6px}
   .lrow{gap:8px}.lrow select{padding:3px 5px;font-size:12px}.btn.play{font-size:28px;padding:6px 8px 8px}.lmodefoot{display:none}
   .slotlab b{font-size:12px;padding:2px 8px}.slotlab span{font-size:10.5px}.slotplus{width:42px;height:42px;font-size:24px}
@@ -469,6 +492,10 @@ body.touch #feed{display:none}
     <div class="lchip" id="onlineChip">● 1 online</div>
   </header>
   <aside class="lprofile" id="lprofile">
+    <div class="lseason"><b>Season 1</b><span>Onenight</span></div>
+    <div class="lvcard" id="lvCard"><div class="lvbadge" id="lvBadge"></div><div class="lvinfo"><div class="lvnum">Level <b id="lvNum">1</b></div><div class="lvbar"><i id="lvBar"></i></div><div class="lvtxt" id="lvTxt"></div><div class="lvnext" id="lvNext"></div></div></div>
+    <div class="lhead chhead">Daily challenges <span id="chReset"></span></div>
+    <div id="chList"></div>
     <div class="lhead">Profile</div>
     <div class="field"><label for="callsign">Callsign</label><input type="text" id="callsign" maxlength="16" autocomplete="off" spellcheck="false"></div>
     <div class="stats"><div><b id="stWins">0</b><span>Wins</span></div><div><b id="stKills">0</b><span>Eliminations</span></div><div><b id="stMatches">0</b><span>Matches</span></div><div><b id="stStreak">0</b><span>Best streak</span></div></div>
@@ -482,14 +509,18 @@ body.touch #feed{display:none}
     <div id="invites"></div>
     <div id="partyLog"></div>
   </div>
+  <div class="lfoot"><span class="lfp">Party</span><span class="lfh">N emote · Esc menu</span><button type="button" class="lfb" id="chBtn">Challenges</button><button type="button" class="lfb" id="newsBtn">News</button></div>
+  <div class="linfo" id="lInfo">Onenight<br>EU · Fill: on<br>Play against: everyone</div>
   <aside class="lmode">
+    <div class="lmodeban">Big map · 20 players</div>
     <div class="lmodehead">Game mode</div>
     <div class="lmodename" id="modeName">Solo</div>
     <div class="lmodesub" id="modeSub"></div>
     <button class="mini wide" id="changeMode" type="button">Change mode</button>
     <div class="lrow"><label for="diff">AI skill</label><select id="diff"><option value="recruit">Recruit</option><option value="regular">Regular</option><option value="veteran">Veteran</option></select></div>
+    <div class="lrow" id="fillRow" hidden><span>Team fill</span><button class="mini fillbtn" id="fillBtn" type="button">Fill</button></div>
     <div class="lrow"><span>Party</span><em id="partyNote">Just you</em><button class="mini" id="leaveBtn" type="button" hidden>Leave</button></div>
-    <button class="btn play" id="playBtn" type="button">Play</button>
+    <button class="btn play" id="playBtn" type="button">Ready</button>
     <div class="lmodefoot" id="menuBest"></div>
   </aside>
 </section>
@@ -4328,7 +4359,7 @@ function dropGun(gid, ammoN) {
 function openChest(c, mine) {
   if (c.open) return;
   c.open = true; c.openT = 0.001;
-  if (mine) { LOOT.myOpens.add(c.i + ':' + c.gen); }
+  if (mine) { LOOT.myOpens.add(c.i + ':' + c.gen); XPS.add(20); chEvent('chest'); }
   const d = c.g.position.distanceTo(player.pos);
   if (d < 60) { sfx.chest(d); burst(vA.set(c.x, c.y + 0.6, c.z), 14, PM.ember, 4, 0.05, 0.7, 6, 0.9); }
   const fx = -Math.sin(c.rot), fz = -Math.cos(c.rot);
@@ -4792,7 +4823,7 @@ function shieldMesh(gid) {
 function shieldPrompt(gid) { const s = SHIELDS[gid], have = me.shield || 0; return have >= s.cap ? 'Shield full (' + Math.round(have) + ')' : 'Drink ' + s.name + ' · +' + s.add + ' shield (up to ' + s.cap + ')'; }
 function useShield(gid) {
   const s = SHIELDS[gid], have = me.shield || 0; if (have >= s.cap) { buildMsg('Shield is full'); return false; }
-  me.shield = Math.min(s.cap, have + s.add); sfx.pickup(); setTimeout(() => sfx.charge(), 120); buildMsg('+' + s.add + ' shield · ' + Math.round(me.shield)); return true;
+  me.shield = Math.min(s.cap, have + s.add); chEvent('shield'); sfx.pickup(); setTimeout(() => sfx.charge(), 120); buildMsg('+' + s.add + ' shield · ' + Math.round(me.shield)); return true;
 }
 function shieldHud() {
   const v = Math.round(me.shield || 0), f = $('shFill'); if (!f) return;
@@ -4932,6 +4963,112 @@ function devShotDir(out) {
 // with the aimbot locked on, bullets ignore walls, builds and terrain
 function devWall() { return devT.aim && devT.tgt && devT.tgt.alive; }
 
+/* ================= Levels, daily challenges, lobby panels ================= */
+// XP from playing: levels pay onebucks. Three daily challenges, the same for everyone on a given day.
+function xpNeed(l) { return 300 + l * 100; }
+function lvlOf(xp) { let l = 1, need = xpNeed(1); while (xp >= need) { xp -= need; l++; need = xpNeed(l); } return { l, cur: xp, need }; }
+const XPS = {
+  get() { return store.get('xp', 0) | 0; },
+  add(n) {
+    const a = lvlOf(XPS.get()).l; store.set('xp', XPS.get() + Math.round(n)); const b = lvlOf(XPS.get()).l;
+    if (b > a) { BUCKS.add(50 * (b - a)); toastLobby('Level ' + b + '!  +' + 50 * (b - a) + ' onebucks'); try { sfx.chest(); } catch (e) {} }
+    renderLevel();
+  },
+};
+const CH_POOL = [
+  { id: 'smg', t: 'SMG eliminations', n: 4, ev: 'kill', cls: 'SMG' },
+  { id: 'sg', t: 'Shotgun eliminations', n: 3, ev: 'kill', cls: 'Shotgun' },
+  { id: 'sn', t: 'Sniper eliminations', n: 2, ev: 'kill', cls: 'Sniper' },
+  { id: 'ar', t: 'Assault rifle eliminations', n: 4, ev: 'kill', cls: 'Assault rifle' },
+  { id: 'pi', t: 'Pistol eliminations', n: 3, ev: 'kill', cls: 'Pistol' },
+  { id: 'kn', t: 'Knife elimination', n: 1, ev: 'kill', cls: 'knife' },
+  { id: 'any', t: 'Eliminations', n: 8, ev: 'kill' },
+  { id: 'chest', t: 'Open glowing chests', n: 6, ev: 'chest' },
+  { id: 'shield', t: 'Drink shields', n: 3, ev: 'shield' },
+  { id: 'top5', t: 'Finish top 5 in Battle Royale', n: 1, ev: 'top5' },
+  { id: 'win', t: 'Win a Battle Royale match', n: 1, ev: 'win', xp: 1000, b: 100 },
+  { id: 'play', t: 'Play matches', n: 3, ev: 'match' },
+];
+function chDay() { return Math.floor(Date.now() / 864e5); }
+function dailyCh() {
+  const R = mulberry(hashStr('ch' + chDay())), pool = CH_POOL.slice(), out = [];
+  while (out.length < 3) out.push(pool.splice(Math.floor(R() * pool.length), 1)[0]);
+  return out;
+}
+function chState() { let s = store.get('chp', null); if (!s || s.day !== chDay()) s = { day: chDay(), p: {}, done: {} }; return s; }
+function chEvent(ev, cls) {
+  try {
+    const s = chState(); let changed = false;
+    for (const c of dailyCh()) {
+      if (c.ev !== ev || s.done[c.id] || (c.cls && c.cls !== cls)) continue;
+      s.p[c.id] = (s.p[c.id] || 0) + 1; changed = true;
+      if (s.p[c.id] >= c.n) {
+        s.done[c.id] = true; const xp = c.xp || 500, b = c.b || 50;
+        store.set('chp', s); XPS.add(xp); BUCKS.add(b);
+        toastLobby('Challenge complete: ' + c.t + '  +' + xp + ' XP  +' + b + ' onebucks'); try { sfx.chest(); } catch (e) {}
+      } else if (inGame) buildMsg(c.t + ' ' + s.p[c.id] + ' / ' + c.n);
+    }
+    if (changed) { store.set('chp', s); renderLevel(); }
+  } catch (e) {}
+}
+function killCls() { return weapon === 2 ? 'knife' : weapon === 3 ? 'Shotgun' : gunDef.cls; }
+function toastLobby(t) { if (inGame) buildMsg(t); else lobbyLog('<b>' + escHtml(t) + '</b>'); }
+
+// level shield badge: the number on a banner shield, colour shifts as you level
+function lvBadgeSvg(l) {
+  const hue = (200 + l * 23) % 360;
+  return `<svg viewBox="0 0 80 92" aria-hidden="true"><defs><linearGradient id="lvg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="hsl(${hue},70%,62%)"/><stop offset="1" stop-color="hsl(${hue},70%,34%)"/></linearGradient></defs>
+    <path d="M40 3 L75 14 V46 C75 68 58 82 40 89 C22 82 5 68 5 46 V14 Z" fill="#e9dcc4" />
+    <path d="M40 10 L68 19 V46 C68 63 55 75 40 81 C25 75 12 63 12 46 V19 Z" fill="url(#lvg)" />
+    <text x="40" y="58" text-anchor="middle" font-family="var(--display)" font-weight="900" font-size="34" fill="#fff">${l}</text></svg>`;
+}
+function renderLevel() {
+  const box = $('lvCard'); if (!box) return;
+  const L = lvlOf(XPS.get());
+  $('lvBadge').innerHTML = lvBadgeSvg(L.l);
+  $('lvNum').textContent = L.l; $('lvTxt').textContent = L.cur + ' / ' + L.need + ' XP';
+  $('lvBar').style.width = (100 * L.cur / L.need).toFixed(1) + '%';
+  $('lvNext').textContent = 'Level ' + (L.l + 1) + ' → +50 onebucks';
+  const s = chState(), list = $('chList'); list.textContent = '';
+  for (const c of dailyCh()) {
+    const p = Math.min(c.n, s.p[c.id] || 0), done = !!s.done[c.id];
+    const row = el('div', 'chrow' + (done ? ' done' : ''));
+    row.innerHTML = `<div class="cht">${escHtml(c.t)}</div><div class="chb"><i style="width:${(100 * p / c.n).toFixed(0)}%"></i></div><div class="chn">${done ? '✓' : p + ' / ' + c.n}</div><div class="chr">+${c.xp || 500} XP · ${BUCK} ${c.b || 50}</div>`;
+    list.append(row);
+  }
+  const left = 864e5 - (Date.now() % 864e5), hh = Math.floor(left / 36e5), mm = Math.floor(left / 6e4) % 60;
+  $('chReset').textContent = 'new in ' + hh + 'h ' + mm + 'm';
+}
+setInterval(() => { if (!inGame) renderLevel(); }, 30000);
+
+// what's new, for the News button
+const NEWS = [
+  ['Bigger map', 'The valley is now 2.8x bigger, with more houses, hills, trees and 20 players per match.'],
+  ['Levels and daily challenges', 'Earn XP from eliminations, chests and wins. Every level pays 50 onebucks.'],
+  ['Real gun sounds', 'Every gun has a recorded gunshot. Far shots arrive late, like real sound.'],
+  ['Ballistics', 'Past 40 m bullets drop and take time to arrive. Lead your targets.'],
+  ['Footsteps and fall damage', 'Hear enemies on wooden floors and in water. Big drops hurt.'],
+];
+function openNews() {
+  let n = $('newsBox');
+  if (!n) {
+    n = el('div'); n.id = 'newsBox'; n.className = 'newsbox';
+    n.innerHTML = '<div class="newsin"><div class="lhead">News</div>' + NEWS.map(([h, t]) => `<div class="newsit"><b>${escHtml(h)}</b><span>${escHtml(t)}</span></div>`).join('') + '<button class="mini wide" id="newsClose" type="button">Close</button></div>';
+    $('sMenu').append(n);
+    n.addEventListener('click', e => { if (e.target === n || e.target.id === 'newsClose') n.hidden = true; });
+  }
+  n.hidden = false;
+}
+
+// team fill: AI teammates join your team in duos, trios and squads
+function fillOn() { return store.get('fill', true) !== false; }
+function renderFill() {
+  const b = $('fillBtn'), row = $('fillRow'); if (!b) return;
+  const pm = partyMode(); row.hidden = !(pm >= 2 && pm <= 4);
+  b.textContent = fillOn() ? 'Fill' : 'No fill'; b.classList.toggle('off', !fillOn());
+}
+function myTeamHumans() { let n = 1; for (const e of ents.values()) if (e.kind === 'remote' && e.team === myTeam) n++; return n; }
+
 /* ================= Game state ================= */
 let MAG = 30; const EYE = 1.62, SLOTS = 10, NET_TAG = 'on1';
 const BOT_NAMES = ['Fjell', 'Ravn', 'Skarv', 'Tindra', 'Odin', 'Juno', 'Brisk', 'Nova', 'Grim', 'Saga', 'Hawk', 'Linn', 'Kestrel', 'Marsh', 'Ondra', 'Vesper', 'Halloran', 'Tamsin', 'Ruiz', 'Okafor', 'Brann', 'Lio', 'Sable', 'Petra', 'Cato', 'Imre'];
@@ -5051,7 +5188,7 @@ function onDeath(victim, killerId, crit) {
   addFeed(killerId, victim.id, crit);
   try { arsenalOnDeath(victim); } catch (err) {}
   if (killerId === me.id && victim !== me) {
-    me.k++; me.streak++; store.set('kills', (store.get('kills', 0) | 0) + 1); BUCKS.add(10);
+    me.k++; me.streak++; store.set('kills', (store.get('kills', 0) | 0) + 1); BUCKS.add(10); XPS.add(50); chEvent('kill', killCls());
     if (me.streak > bestStreak) { bestStreak = me.streak; store.set('streak', bestStreak); }
     sfx.kill(); hitmarkT = 0.25; $('hitmark').className = 'on crit kill';
     const km = $('killMsg'); km.textContent = 'Eliminated '; const b = document.createElement('b'); b.textContent = victim.name; km.append(b);
@@ -5151,6 +5288,7 @@ function endMatch(winnerId) {
   const won = !!winnerId && (winnerId === me.id || (BR.winTeam && BR.winTeam === teamOf(me)) || sameTeam(getEnt(winnerId), me));
   const teams = teamSize() > 1;
   if (won) BUCKS.add(100);
+  { const pl = won ? 1 : BR.place; XPS.add(60 + (won ? 400 : 0) + (pl && pl <= 10 ? 60 : 0)); chEvent('match'); if (won && BR.mode <= 4) chEvent('win'); if (BR.mode <= 4 && pl && pl <= 5) chEvent('top5'); }
   $('brEyebrow').textContent = won ? '#1 · Victory · +100 onebucks' : (BR.place ? `You placed #${BR.place}` : 'Match over');
   if (BR.mode === 6) BR.place = 0;
   $('brTitle').textContent = BR.mode === 6 ? (won ? 'Your team wins' : BR.winTeam ? (BR.winTeam === 'R' ? 'Red' : 'Blue') + ' team wins' : 'Draw') + ' · ' + CTF.score.R + ' – ' + CTF.score.B : won ? (teams ? 'Your team wins' : BR.mode === 5 ? 'Most kills' : 'Last one standing') : winnerId ? (teams ? `${nameOf(winnerId)}’s team wins` : `${nameOf(winnerId)} wins`) : 'Nobody survived';
@@ -5859,6 +5997,8 @@ function lobbyLog(html) {
 }
 function renderLobby() {
   if (state !== 'menu' || !LOBBY_OK) return;
+  renderLevel(); renderFill();
+  { const li = $('lInfo'); if (li) li.innerHTML = 'Onenight<br>EU · Fill: ' + (fillOn() ? 'on' : 'off') + '<br>Play against: everyone'; }
   // my leader left, or joined someone else's party: I'm on my own again
   if (myLeader) { const p = presOf(myLeader); if (!p || p.pid !== myLeader) { lobbyLog('Your party leader left. <b>You lead your own party now.</b>'); myLeader = null; myReady = false; } }
   const mode = partyMode(), members = partyMembers(), lead = !myLeader;
@@ -5915,7 +6055,7 @@ function renderLobby() {
   const pb = $('playBtn');
   pb.classList.toggle('ready', !lead && myReady);
   if (lead) {
-    pb.disabled = false; pb.textContent = 'Play';
+    pb.disabled = false; pb.textContent = 'Ready';
     const others = members.filter(m => !m.you), ready = others.filter(m => m.status === 'Ready').length;
     setText('partyNote', others.length ? `${members.length} of ${mode} · ${ready} ready` : mode > 1 ? `Just you · ${mode - 1} open slot${mode > 2 ? 's' : ''}` : 'Just you');
   } else {
@@ -5958,6 +6098,9 @@ $('modeSel').addEventListener('click', e => { if (e.target.id === 'modeSel') clo
 window.addEventListener('keydown', e => { if ($('modeSel').hidden) return; if (e.key === 'Escape') closeModeSel(false); else if (e.key === 'Enter') closeModeSel(true); });
 $('navHelp').addEventListener('click', () => { refreshKeyHelp(); show('sHelp'); });
 $('helpDone').addEventListener('click', () => { show('sMenu'); renderLobby(); });
+$('fillBtn').addEventListener('click', () => { store.set('fill', !fillOn()); sfx.draw(); renderLobby(); });
+$('newsBtn').addEventListener('click', openNews);
+$('chBtn').addEventListener('click', () => { const pr = $('lprofile'); pr.scrollTop = 0; pr.classList.remove('flash'); void pr.offsetWidth; pr.classList.add('flash'); });
 $('slotLabels').addEventListener('click', e => {
   const b = e.target.closest && e.target.closest('.slotplus'); if (!b || myLeader) return;
   const pr = $('lprofile'); pr.classList.remove('flash'); void pr.offsetWidth; pr.classList.add('flash');
@@ -5989,7 +6132,7 @@ function updateMates() {
     row.append(el('span', '', e.name), bar); tp.append(row);
   }
 }
-function assignBotTeams(bots) { const m = teamSize(); bots.forEach((e, i) => { e.team = 'T' + BR.id + '_' + Math.floor(i / m); }); }
+function assignBotTeams(bots) { const m = teamSize(); let k = 0; if (m > 1 && BR.mode <= 4 && fillOn()) { const need = Math.max(0, m - myTeamHumans()); for (; k < need && k < bots.length; k++) bots[k].team = myTeam; } bots.slice(k).forEach((e, i) => { e.team = 'T' + BR.id + '_' + Math.floor(i / m); }); }
 const teamDrops = new Map();
 function botDrop(e) {
   const t = e.team || e.id, p = teamDrops.get(t);
@@ -6760,14 +6903,20 @@ const L3 = (() => {
   const stoneM = new THREE.MeshStandardMaterial({ color: 0x3b3742, roughness: 0.9 });
   const topM = new THREE.MeshStandardMaterial({ map: plankTex, color: 0xb59b84, roughness: 0.8 });
   const pads = [];
+  const beamTex = new THREE.CanvasTexture(makeCanvas(4, 128, (g, w, h) => { const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, 'rgba(255,255,255,0)'); gr.addColorStop(0.7, 'rgba(255,255,255,.35)'); gr.addColorStop(1, 'rgba(255,255,255,1)'); g.fillStyle = gr; g.fillRect(0, 0, w, h); }));
+  const discTex = new THREE.CanvasTexture(makeCanvas(128, 128, (g, w, h) => { const gr = g.createRadialGradient(64, 64, 4, 64, 64, 64); gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.55, 'rgba(255,255,255,.55)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.fillRect(0, 0, w, h); }));
   for (let i = 0; i < 4; i++) {
     const g = new THREE.Group();
     const base = new THREE.Mesh(new THREE.CylinderGeometry(0.98, 1.08, 0.22, 40), stoneM); base.position.y = 0.11; g.add(base);
     const top = new THREE.Mesh(new THREE.CylinderGeometry(0.86, 0.86, 0.04, 40), topM); top.position.y = 0.24; g.add(top);
     const ringM = new THREE.MeshBasicMaterial({ color: 0xffb066, toneMapped: false });
     const ring = new THREE.Mesh(new THREE.TorusGeometry(0.93, 0.025, 8, 64), ringM); ring.rotation.x = Math.PI / 2; ring.position.y = 0.235; g.add(ring);
-    const lamp = new THREE.PointLight(0xffa860, 1.2, 4.2, 2); lamp.position.set(0, 0.9, 0.9); g.add(lamp);
-    sc.add(g); pads.push({ g, ring, ringM, lamp });
+    const lamp = new THREE.PointLight(0x6fdcff, 1.6, 4.6, 2); lamp.position.set(0, 0.9, 0.9); g.add(lamp);
+    const beamM = new THREE.MeshBasicMaterial({ map: beamTex, color: 0x5fe1ff, transparent: true, opacity: 0.5, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, toneMapped: false });
+    const beam = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 0.86, 1.7, 48, 1, true), beamM); beam.position.y = 1.1; g.add(beam);
+    const discM = new THREE.MeshBasicMaterial({ map: discTex, color: 0x5fe1ff, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false });
+    const disc = new THREE.Mesh(new THREE.CircleGeometry(0.84, 48), discM); disc.rotation.x = -Math.PI / 2; disc.position.y = 0.265; g.add(disc);
+    sc.add(g); pads.push({ g, ring, ringM, lamp, beamM, discM });
   }
   // fireflies drifting over the grass
   const N = 70, fpos = new Float32Array(N * 3), seeds = [];
@@ -6828,7 +6977,8 @@ function renderLobbyStage(dt) {
     if (!s) return;
     pad.g.position.set(s.x, 0, s.z);
     const glow = s.empty ? 0.25 : s.you ? 1 : 0.7;
-    pad.ringM.color.setRGB(1.0 * glow + 0.08, 0.66 * glow + 0.05, 0.38 * glow + 0.04);
+    pad.ringM.color.setRGB(0.3 * glow + 0.05, 0.85 * glow + 0.06, 1.0 * glow + 0.08);
+    pad.beamM.opacity = s.empty ? 0 : (s.you ? 0.55 : 0.32) + Math.sin(L3.t * 2 + i) * 0.05; pad.discM.opacity = s.empty ? 0.15 : s.you ? 0.95 : 0.6;
     pad.lamp.intensity = s.empty ? 0.25 : 1.2 + Math.sin(L3.t * 3 + i) * 0.08;
     if (s.empty) return;
     seen.add(s.id);
