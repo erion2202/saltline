@@ -247,6 +247,30 @@ body.touch #loadout{transform:scale(.78);transform-origin:100% 100%}
 #msCancel{font:inherit;font-size:12px;letter-spacing:.12em;text-transform:uppercase;padding:7px;background:transparent;border:1px solid rgba(241,232,218,.3);color:var(--salt);cursor:pointer}
 @media (max-width:700px){.ms-body{flex-direction:column}.ms-side{width:auto}.ms-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.ms-card b{font-size:15px}}
 @media (max-height:560px) and (min-width:701px){.ms-card{aspect-ratio:4/3}.ms-box h2{font-size:24px;margin-bottom:8px}.ms-side{padding:10px;gap:6px}#msSizes button{padding:6px 9px}#msAccept{font-size:20px;padding:7px}}
+.bar.shield{height:7px;margin-top:3px}.bar.shield i{background:#4aa8ff;box-shadow:0 0 8px rgba(74,168,255,.7)}
+.bp-page{position:fixed;top:64px;right:0;bottom:0;width:min(640px,64vw);z-index:12;background:linear-gradient(90deg,rgba(14,11,22,.82),rgba(14,11,22,.96));border-left:1px solid rgba(241,232,218,.14);display:flex;flex-direction:column;padding:14px 16px;gap:10px}
+.bp-page[hidden]{display:none}
+body.bp-open .lprofile,body.bp-open .lmode,body.bp-open .lbottom{visibility:hidden}
+.bp-head{display:flex;align-items:center;gap:12px}.bp-head h2{margin:0;font-family:var(--display);font-weight:800;font-size:34px;letter-spacing:.06em;text-transform:uppercase;color:#ffcf3a}
+.bp-bal{margin-left:auto;font-size:14px;color:#ffd84a;letter-spacing:.06em}
+.bp-x{background:none;border:1px solid rgba(241,232,218,.3);color:var(--salt);width:30px;height:30px;cursor:pointer;font:inherit}
+.bp-tabs,.lk-slots{display:flex;gap:6px;flex-wrap:wrap}
+.bp-tabs button{font:inherit;font-size:12px;letter-spacing:.14em;text-transform:uppercase;padding:7px 12px;background:rgba(241,232,218,.06);border:1px solid rgba(241,232,218,.2);color:var(--salt);cursor:pointer}
+.bp-tabs button.on{border-color:#ffcf3a;color:#ffcf3a}
+.bp-grid{flex:1;overflow:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:8px;align-content:start}
+.bp-card{position:relative;font:inherit;color:var(--salt);text-align:left;cursor:pointer;background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(0,0,0,.25));border:1px solid rgba(241,232,218,.16);border-bottom:3px solid var(--rc);padding:8px;display:flex;flex-direction:column;gap:3px}
+.bp-card:hover{background:rgba(255,255,255,.08)}.bp-card.sel{outline:2px solid #ffcf3a;outline-offset:-2px}.bp-card.locked{opacity:.5;cursor:default}
+.bp-ico{height:70px;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle,rgba(255,255,255,.08),transparent 70%)}
+.bp-ico img{width:64px;height:64px;border-radius:50%;box-shadow:0 0 0 2px rgba(255,255,255,.2)}.bp-emo{font-size:42px;line-height:1}
+.bp-card b{font-size:13px}.bp-card i{font-style:normal;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--rc)}
+.bp-price{font-size:12px;color:#ffd84a}
+.bp-foot{display:flex;align-items:center;gap:10px}.bp-foot span{flex:1;font-size:12px;opacity:.8}
+#bpBuy{font-family:var(--display);font-weight:800;font-size:20px;letter-spacing:.06em;text-transform:uppercase;padding:9px 16px;background:#ffcf3a;color:#1a1410;border:0;cursor:pointer}#bpBuy:disabled{opacity:.5;cursor:default}
+.lk-slots button{flex:1;min-width:120px;font:inherit;color:var(--salt);text-align:left;padding:8px;background:rgba(241,232,218,.05);border:1px solid rgba(241,232,218,.18);cursor:pointer;display:flex;flex-direction:column;gap:4px}
+.lk-slots button.on{border-color:#ffcf3a}.lk-slots b{font-size:11px;letter-spacing:.14em;text-transform:uppercase;opacity:.75}
+.lk-slots span{display:flex;align-items:center;gap:8px}.lk-slots img{width:34px;height:34px;border-radius:50%}.lk-slots .bp-emo{font-size:26px}.lk-slots em{font-style:normal;font-size:13px}
+#bucksChip{color:#ffd84a;font-size:13px;letter-spacing:.06em;margin-left:10px;white-space:nowrap}
+@media (max-width:760px){.bp-page{width:100%;top:56px}}
 #usePrompt{position:fixed;left:50%;top:calc(50% + 46px);transform:translateX(-50%);z-index:3;pointer-events:none;background:rgba(14,12,20,.78);border:1px solid rgba(255,255,255,.14);padding:7px 12px;font-size:13px;letter-spacing:.02em;max-width:min(520px,calc(100vw - 32px));text-align:center;line-height:1.45}
 #usePrompt b{display:inline-block;min-width:20px;padding:1px 6px;margin-right:6px;background:#f4a65b;color:#1a1410;font-weight:700}
 #usePrompt small{display:block;opacity:.72;font-size:11.5px;margin-top:2px}
@@ -369,7 +393,7 @@ body.touch #feed{display:none}
     <div class="sub" id="hNet"></div>
   </div>
   <div class="corner tr" id="feed"></div>
-  <div class="corner bl"><div class="lbl" id="hpLbl">Health</div><div class="bar" id="hpBar"><i id="hpFill"></i></div><div class="sub" id="hpNum">100</div></div>
+  <div class="corner bl"><div class="lbl" id="hpLbl">Health</div><div class="bar shield" id="shBar" hidden><i id="shFill"></i></div><div class="bar" id="hpBar"><i id="hpFill"></i></div><div class="sub"><span id="hpNum">100</span> <span id="shNum" style="color:#7cc0ff"></span></div></div>
   <div class="corner br" id="loadout">
     <div class="lo-ammo"><div class="big" id="ammoBig"><span id="hAmmo">15</span><small id="hMag">/15</small></div><div class="lo-name" id="ammoLbl">Service 92</div>
       <div class="lo-mode"><span id="loMode">Semi</span><span id="loPips"><i></i><i></i><i></i><i></i><i></i></span></div></div>
@@ -397,6 +421,13 @@ body.touch #feed{display:none}
   <div id="shop" hidden><div class="shopBox"><h2>☠ Pirate Shop</h2><p>Your access token opens the whole armoury for four days, in every match. Pick any gun: it goes straight into your hands, and you keep the rest. <b id="shopLeft"></b></p><div id="shopGrid"></div><button id="shopClose" type="button">Close · I</button></div></div>
 </div>
 <div id="gasFx"></div>
+<div id="bpShop" class="bp-page" hidden><div class="bp-head"><h2>Bunnpris</h2><span class="bp-bal" id="bpBal"></span><button class="bp-x" type="button" data-close="1">✕</button></div>
+  <div id="bpTabs" class="bp-tabs"><button type="button" data-t="featured">Today</button><button type="button" data-t="skin">Skins</button><button type="button" data-t="costume">Costumes</button><button type="button" data-t="emote">Emotes</button></div>
+  <div id="bpGrid" class="bp-grid"></div>
+  <div class="bp-foot"><span id="bpInfo"></span><button id="bpBuy" type="button">Buy</button></div></div>
+<div id="bpLocker" class="bp-page" hidden><div class="bp-head"><h2>Locker</h2><span class="bp-bal" id="lkBal"></span><button class="bp-x" type="button" data-close="1">✕</button></div>
+  <div id="lkSlots" class="lk-slots"><button type="button" data-k="skin"><b>Outfit</b><span></span></button><button type="button" data-k="costume"><b>Headgear</b><span></span></button><button type="button" data-k="emote"><b>Emote · N</b><span></span></button></div>
+  <div id="lkGrid" class="bp-grid"></div></div>
 <div id="modeSel" hidden><div class="ms-box">
   <h2>Choose game mode</h2>
   <div class="ms-body">
@@ -434,7 +465,7 @@ body.touch #feed{display:none}
 <section class="screen lobby2" id="sMenu">
   <header class="ltop">
     <div class="logo">One<span>night</span></div>
-    <nav class="lnav"><button class="on" type="button">Lobby</button><button id="setBtn" type="button">Settings</button><button id="navHelp" type="button">How to play</button></nav>
+    <nav class="lnav"><button class="on" type="button" data-page="lobby" id="navLobby">Lobby</button><button type="button" data-page="shop" id="navShop">Bunnpris</button><button type="button" data-page="locker" id="navLocker">Locker</button><button id="setBtn" type="button">Settings</button><button id="navHelp" type="button">How to play</button></nav>
     <div class="lchip" id="onlineChip">● 1 online</div>
   </header>
   <aside class="lprofile" id="lprofile">
@@ -3535,7 +3566,7 @@ function buildSoldier2(colorIdx, name) {
   const bones = {};
   body.traverse(o => {
     if (o.isBone) { const nm = o.name.replace(/_\d+$/, ''); if (S2_BONES.includes(nm) && !bones[nm]) bones[nm] = o; }
-    if (o.isMesh) { const n = o.material && o.material.name; const mt = MAP[n] || SM.uniform; o.material = !o.isSkinnedMesh || mt === accent ? mt : s2Skinned(mt); o.castShadow = true; o.receiveShadow = true;
+    if (o.isMesh) { const n = o.material && o.material.name; o.userData.role = n; const mt = MAP[n] || SM.uniform; o.material = !o.isSkinnedMesh || mt === accent ? mt : s2Skinned(mt); o.castShadow = true; o.receiveShadow = true;
       // skinned parts keep their bind-pose bounds: grow them once so posed limbs are never culled by mistake, then let the camera cull
       const g_ = o.geometry; if (!g_.boundingSphere) g_.computeBoundingSphere(); if (!g_.userData.grown) { g_.boundingSphere.radius *= 1.8; g_.userData.grown = true; }
       o.frustumCulled = true; }
@@ -3741,6 +3772,7 @@ function animateSoldier2(e, dt) {
   // ---- weapon and arms
   if (e.kind === 'bot' && !e.gid && inGame) giveBotGun(e);
   s2SelectGun(m, e);
+  applyLook(m, (e === selfView || String(e.id) === 'lobby-' + me.id) && previewLook ? previewLook : lookFor(e));
   const W = m.W;
   W.rifle.g.visible = tw === 1 && !inAir; W.sg.g.visible = tw === 3 && !inAir; W.knife.g.visible = tw === 2 && !inAir;
   const gun = tw === 3 ? W.sg : W.rifle;
@@ -3803,6 +3835,7 @@ function animateSoldier2(e, dt) {
     ik2(B.uparmR, B.foreR, B.handR, m.len.ua, m.len.fa, toWorld(m, 0.4 + f * 0.2, 0.9 + f * 0.2, -0.1, new V3()), pr);
     ik2(B.uparmL, B.foreL, B.handL, m.len.ua, m.len.fa, toWorld(m, -0.42 - f * 0.2, 0.9 + f * 0.25, -0.05, new V3()), pl);
   }
+  if (e.emote && e.alive) emotePose(m, e, dt, pr, pl);
   // muzzle flash
   for (const w of [W.rifle, W.sg]) w.flash.visible = false;
   if ((e.flashT || 0) > 0) { e.flashT -= dt; gun.flash.visible = hasGun && !m.silent; gun.flash.rotation.z = Math.random() * 6; }
@@ -4097,6 +4130,7 @@ function renderSlots() {
   $('shopTag').hidden = !inv.token;
 }
 function resetInventory() {
+  me.shield = 0;
   inv.slots = [{ id: 'pistol', ammo: 15 }, null]; inv.sel = 0; inv.token = tokenLeft() > 0; gunDef = GUNS.pistol; MAG = gunDef.mag; ammo = MAG;
   setViewGun(gunDef, true); burstLeft = 0; boltCycle = -1; closeShop(); renderSlots();
 }
@@ -4182,6 +4216,8 @@ function planChests(matchId) {
 function itemMesh(it) {
   const g = new THREE.Group();
   let model = null;
+  if (SHIELDS[it.gid]) { const g2 = new THREE.Group(), hold = new THREE.Group(); hold.add(shieldMesh(it.gid)); hold.scale.setScalar(1.6); g2.add(hold); g2.userData.holder = hold;
+    const sb = new THREE.Mesh(itemBeamGeo, new THREE.MeshBasicMaterial({ map: beamTex, color: SHIELDS[it.gid].col, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, opacity: 0.6, toneMapped: false })); sb.position.y = 1.2; g2.add(sb); return g2; }
   if (it.gid === 'token') model = ARS.ready.token ? arsPart('token', 'body', true) : null;
   else model = ARS.ready[it.gid === 'tac' ? '' : it.gid] ? arsPart(it.gid, 'body', true) : null;
   if (it.gid === 'tac' || (!model && it.gid !== 'token')) { model = it.gid === 'pump' ? s2Shotgun().g : s2Rifle().g; }
@@ -4199,7 +4235,7 @@ function itemMesh(it) {
   return g;
 }
 function addItem(uid, gid, x, z, ammoN, fromY) {
-  if (LOOT.items.has(uid) || !gid || (!GUNS[gid] && gid !== 'token')) return;
+  if (LOOT.items.has(uid) || !gid || (!GUNS[gid] && gid !== 'token' && !SHIELDS[gid])) return;
   const it = { uid, gid, x, z, y: terrainH(x, z), ammo: ammoN, pop: fromY !== undefined ? 1 : 0, fromY: fromY || 0, t: Math.random() * 6 };
   it.g = itemMesh(it); it.g.position.set(x, it.y, z); scene.add(it.g); LOOT.items.set(uid, it);
 }
@@ -4219,9 +4255,11 @@ function openChest(c, mine) {
   if (d < 60) { sfx.chest(d); burst(vA.set(c.x, c.y + 0.6, c.z), 14, PM.ember, 4, 0.05, 0.7, 6, 0.9); }
   const fx = -Math.sin(c.rot), fz = -Math.cos(c.rot);
   addItem('c' + c.i + (c.gen ? 'g' + c.gen : ''), c.loot, c.x + fx * 1.0, c.z + fz * 1.0, undefined, c.y + 0.7); c.shutT = 0;
+  const shd = rollShield(mulberry(hashStr('shield' + LOOT.match + ':' + c.i + ':' + c.gen))); if (shd) addItem('c' + c.i + 's' + c.gen, shd, c.x + fx * 1.0 - fz * 0.9, c.z + fz * 1.0 + fx * 0.9, undefined, c.y + 0.7);
 }
 function pickUp(it) {
   LOOT.myPicks.add(it.uid); removeItem(it.uid);
+  if (SHIELDS[it.gid]) { useShield(it.gid); return; }
   if (it.gid === 'token') {
     store.set('tokenUntil', Date.now() + TOKEN_DAYS * 86400e3); inv.token = true; sfx.chest(0); renderSlots();
     buildMsg('PIRATE SHOP UNLOCKED FOR ' + TOKEN_DAYS + ' DAYS · press ' + keyName(binds.shop || 'KeyI') + ' to take any gun');
@@ -4244,7 +4282,7 @@ function lootTarget() {
     const s = d * (1.6 - facing); if (s < bestS) { bestS = s; best = obj; }
   };
   for (const c of LOOT.chests) if (!c.open) consider({ chest: c }, c.x, c.y, c.z, 2.8);
-  for (const it of LOOT.items.values()) if (it.pop <= 0) consider({ item: it }, it.x, it.y, it.z, 2.4);
+  for (const it of LOOT.items.values()) if (it.pop <= 0 && !(SHIELDS[it.gid] && (me.shield || 0) >= SHIELDS[it.gid].cap)) consider({ item: it }, it.x, it.y, it.z, 2.4);
   return best;
 }
 function arsenalInteract() {
@@ -4288,6 +4326,7 @@ function updateLoot(dt) {
     const k = '<b>' + escHtml(keyName(binds.use || 'KeyE')) + '</b> ';
     if (t.chest) html = k + 'Open chest';
     else if (t.item.gid === 'token') html = k + 'Take <span style="color:' + RARITY[5].c + '">Pirate Shop Access Token</span> · Mythic';
+    else if (SHIELDS[t.item.gid]) html = k + '<span style="color:#7cc0ff">' + escHtml(shieldPrompt(t.item.gid)) + '</span>';
     else { const g = GUNS[t.item.gid]; html = k + (inv.slots[0] && inv.slots[1] ? 'Swap for ' : 'Pick up ') + '<span style="color:' + RARITY[g.rar].c + '">' + escHtml(g.name) + '</span> · ' + RARITY[g.rar].n + '<small>' + escHtml(g.special) + '</small>'; }
     if (pr.innerHTML !== html) pr.innerHTML = html;
     pr.hidden = false;
@@ -4450,7 +4489,9 @@ function soldierShadowLod() {
     m.farShadow = far; m.root.traverse(o => { if (o.isMesh && o.material && o.material.visible !== false) o.castShadow = !far; });
   }
 }
+function emoteCancel() { if (selfView.emote && (Math.hypot(player.vel.x, player.vel.z) > 0.8 || mouseDown || !me.alive || buildMode || dropping)) selfView.emote = null; }
 function arsenalFrame(dt) {
+  emoteCancel(); shieldHud();
   shadowLodT -= dt; if (shadowLodT <= 0) { shadowLodT = 0.5; soldierShadowLod(); }
   updateLoot(dt);
   lootSyncT -= dt; if (lootSyncT <= 0) { lootSyncT = 0.25; syncLoot(); }
@@ -4488,6 +4529,246 @@ function arsenalFrame(dt) {
     }
   } catch (err) { console.warn('cabin merge', err && err.message); }
 })();
+/* ================= Bunnpris (item shop), Onebucks, Locker, emotes, shields ================= */
+const BUCK = '●';
+const BUCKS = { get() { return store.get('bucks', 250) | 0; }, add(n) { store.set('bucks', Math.max(0, BUCKS.get() + n)); renderBucks(); } };
+function renderBucks() { const e = $('bucksChip'); if (e) e.textContent = BUCK + ' ' + BUCKS.get().toLocaleString('nb-NO') + ' onebucks'; for (const id of ['bpBal', 'lkBal']) { const b = $(id); if (b) b.textContent = BUCK + ' ' + BUCKS.get().toLocaleString('nb-NO'); } }
+// ---- catalogue
+const SKINS = [
+  { id: 'std', name: 'Standard Issue', price: 0, rar: 0, pat: 'blob', base: '#77765a', cols: ['#4c5638', '#8d8868', '#5a4d3a', '#a29d80', '#3c432e', '#6b6a4c'], vest: 0x6f6349, helmet: 0xb4b4a2 },
+  { id: 'snow', name: 'Fjellsnø', price: 600, rar: 1, pat: 'blob', base: '#d8dde1', cols: ['#aab3ba', '#f4f6f7', '#8b949b', '#c3cacf'], vest: 0xc9cdd1, helmet: 0xe6e9ec },
+  { id: 'desert', name: 'Sandstorm', price: 600, rar: 1, pat: 'blob', base: '#c2a878', cols: ['#a88a5c', '#d8c49a', '#8c7048', '#b89c6c'], vest: 0xb49a6e, helmet: 0xd6c39b },
+  { id: 'night', name: 'Midnattsol', price: 800, rar: 2, pat: 'digital', base: '#1d2433', cols: ['#2c3850', '#11161f', '#3c4a66', '#252e42'], vest: 0x232a38, helmet: 0x3a4660 },
+  { id: 'pixel', name: 'Pixel Ops', price: 800, rar: 2, pat: 'digital', base: '#5d6a4a', cols: ['#3e4a30', '#86916a', '#2c3524', '#6f7b56'], vest: 0x4d5940, helmet: 0x7c8862 },
+  { id: 'tiger', name: 'Tiger', price: 1000, rar: 3, pat: 'stripe', base: '#e07b23', cols: ['#1a1410', '#2a1c12'], vest: 0x2a2018, helmet: 0xe48a35 },
+  { id: 'ember', name: 'Glør', price: 1000, rar: 3, pat: 'blob', base: '#3a1210', cols: ['#a3221a', '#1c0a08', '#e0482a', '#5c1812'], vest: 0x2a0e0c, helmet: 0xb8301f },
+  { id: 'candy', name: 'Candy Floss', price: 1200, rar: 3, pat: 'blob', base: '#f4b6d0', cols: ['#e57fae', '#ffe0ee', '#c95f94', '#ffc7e0'], vest: 0xf3a5c7, helmet: 0xffd3e6 },
+  { id: 'aurora', name: 'Nordlys', price: 1500, rar: 4, pat: 'stripe', base: '#0e2a2a', cols: ['#29d6a0', '#3a8cff', '#7a4cff'], vest: 0x123333, helmet: 0x24b894 },
+  { id: 'gold', name: 'Gullkorn', price: 2000, rar: 4, pat: 'solid', base: '#c99a35', cols: ['#e7c066', '#a77a1e'], vest: 0xb98a2a, helmet: 0xe2b44e, metal: true },
+];
+const COSTUMES = [
+  { id: 'none', name: 'Helmet', price: 0, rar: 0, icon: '🪖' },
+  { id: 'beanie', name: 'Lue', price: 300, rar: 0, icon: '🧶', hide: true },
+  { id: 'cap', name: 'Caps', price: 300, rar: 0, icon: '🧢', hide: true },
+  { id: 'cowboy', name: 'Cowboy', price: 500, rar: 1, icon: '🤠', hide: true },
+  { id: 'tophat', name: 'Flosshatt', price: 600, rar: 2, icon: '🎩', hide: true },
+  { id: 'bunny', name: 'Kaninører', price: 700, rar: 2, icon: '🐰' },
+  { id: 'viking', name: 'Viking', price: 800, rar: 3, icon: '⚔️', hide: true },
+  { id: 'halo', name: 'Glorie', price: 900, rar: 3, icon: '😇' },
+  { id: 'crown', name: 'Krone', price: 1500, rar: 4, icon: '👑', hide: true },
+];
+const EMOTES = [
+  { id: 'wave', name: 'Hei hei', price: 0, rar: 0, icon: '👋', dur: 2.6 },
+  { id: 'salute', name: 'Honnør', price: 200, rar: 0, icon: '🫡', dur: 2.4 },
+  { id: 'clap', name: 'Applaus', price: 250, rar: 1, icon: '👏', dur: 2.6 },
+  { id: 'point', name: 'Der borte!', price: 250, rar: 1, icon: '👉', dur: 2.2 },
+  { id: 'flex', name: 'Muskler', price: 400, rar: 2, icon: '💪', dur: 2.6 },
+  { id: 'dance', name: 'Fjordshuffle', price: 600, rar: 3, icon: '💃', dur: 4.4 },
+  { id: 'spin', name: 'Seierssving', price: 800, rar: 4, icon: '🌀', dur: 3 },
+];
+const CAT = { skin: SKINS, costume: COSTUMES, emote: EMOTES };
+function owned() { const o = store.get('owned', null); return Array.isArray(o) ? o : []; }
+function owns(kind, id) { const it = CAT[kind].find(x => x.id === id); return !!it && (it.price === 0 || owned().includes(kind + ':' + id)); }
+function myLook() { const l = store.get('look', null) || {}; return { sk: owns('skin', l.sk) ? l.sk : 'std', ct: owns('costume', l.ct) ? l.ct : 'none', em: owns('emote', l.em) ? l.em : 'wave' }; }
+function setLook(k, v) { const l = myLook(); l[k] = v; store.set('look', l); }
+
+// ---- skin textures and materials
+const SKIN_MAT = {};
+function skinTexture(s) {
+  return texFrom(makeCanvas(256, 256, (g, w, h) => {
+    g.fillStyle = s.base; g.fillRect(0, 0, w, h);
+    const R = mulberry(hashStr(s.id));
+    if (s.pat === 'blob') for (let i = 0; i < 170; i++) { g.fillStyle = s.cols[Math.floor(R() * s.cols.length)]; g.beginPath(); g.ellipse(R() * w, R() * h, 8 + R() * 30, 5 + R() * 14, R() * 3.14, 0, 6.28); g.fill(); }
+    else if (s.pat === 'digital') for (let i = 0; i < 900; i++) { g.fillStyle = s.cols[Math.floor(R() * s.cols.length)]; const q = 4 + Math.floor(R() * 3) * 4; g.fillRect(Math.floor(R() * w / 4) * 4, Math.floor(R() * h / 4) * 4, q, q); }
+    else if (s.pat === 'stripe') for (let i = 0; i < 40; i++) { g.strokeStyle = s.cols[i % s.cols.length]; g.lineWidth = 3 + R() * 9; g.beginPath(); const y = R() * h; g.moveTo(-10, y); for (let x = 0; x <= w + 10; x += 16) g.lineTo(x, y + Math.sin(x * 0.05 + i) * 14 + (R() - 0.5) * 10); g.stroke(); }
+    else { const gr = g.createLinearGradient(0, 0, w, h); gr.addColorStop(0, s.cols[0]); gr.addColorStop(0.5, s.base); gr.addColorStop(1, s.cols[1]); g.fillStyle = gr; g.fillRect(0, 0, w, h); }
+    speckle(g, w, h, 4000, ['rgba(0,0,0,.07)', 'rgba(255,255,255,.05)']);
+  }), 2, 2);
+}
+function skinMats(id) {
+  if (SKIN_MAT[id]) return SKIN_MAT[id];
+  const s = SKINS.find(x => x.id === id) || SKINS[0];
+  if (s.id === 'std') return (SKIN_MAT[id] = { uniform: SM.uniform, vest: SM.vest, helmet: SM.helmet });
+  const tex = skinTexture(s); tex.encoding = THREE.sRGBEncoding;
+  const uniform = SM.uniform.clone(); uniform.map = tex; uniform._lin = true; if (s.metal) { uniform.metalness = 0.75; uniform.roughness = 0.35; }
+  const vest = SM.vest.clone(); vest.color.setHex(s.vest).convertSRGBToLinear(); vest._lin = true; if (s.metal) { vest.metalness = 0.8; vest.roughness = 0.3; }
+  const helmet = SM.helmet.clone(); helmet.map = tex; helmet.color.setHex(s.helmet).convertSRGBToLinear(); helmet._lin = true;
+  return (SKIN_MAT[id] = { uniform, vest, helmet });
+}
+function skinSwatch(s) { if (s._sw) return s._sw; const c = document.createElement('canvas'); c.width = c.height = 96; const t = skinTexture(s); c.getContext('2d').drawImage(t.image, 0, 0, 96, 96); return (s._sw = c.toDataURL()); }
+
+// ---- headgear, built from primitives and seated on the helmet's top
+const CM = {};
+function cmat(k, c, o = {}) { if (!CM[k]) { CM[k] = new THREE.MeshStandardMaterial(Object.assign({ color: c, roughness: 0.6 }, o)); fixMat(CM[k]); } return CM[k]; }
+function costumeMesh(id) {
+  const g = new THREE.Group(), add = (geo, m, x, y, z, rx = 0, ry = 0, rz = 0) => { const o = new THREE.Mesh(geo, m); o.position.set(x, y, z); o.rotation.set(rx, ry, rz); o.castShadow = true; g.add(o); return o; };
+  if (id === 'crown') {
+    const gold = cmat('gold', 0xe2b13c, { metalness: 1, roughness: 0.25 });
+    add(new THREE.CylinderGeometry(0.105, 0.11, 0.06, 24, 1, true), gold, 0, -0.02, 0).material.side = THREE.DoubleSide;
+    for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI * 2; add(new THREE.ConeGeometry(0.022, 0.07, 6), gold, Math.cos(a) * 0.1, 0.04, Math.sin(a) * 0.1); add(new THREE.SphereGeometry(0.012, 8, 6), cmat('ruby', i % 2 ? 0x2b6bff : 0xd81b3a, { metalness: 0.3, roughness: 0.15 }), Math.cos(a) * 0.106, -0.02, Math.sin(a) * 0.106); }
+  } else if (id === 'bunny') {
+    for (const s of [-1, 1]) { const e = add(new THREE.SphereGeometry(1, 14, 10), cmat('fur', 0xf4f1ec, { roughness: 0.95 }), s * 0.055, 0.12, 0.01, 0, 0, s * -0.2); e.scale.set(0.032, 0.14, 0.018); const i = add(new THREE.SphereGeometry(1, 12, 8), cmat('pinkin', 0xf2a6bf, { roughness: 0.9 }), s * 0.055, 0.12, -0.012, 0, 0, s * -0.2); i.scale.set(0.018, 0.11, 0.008); }
+    add(new THREE.TorusGeometry(0.1, 0.008, 6, 24, Math.PI), cmat('band', 0x222222), 0, -0.02, 0, 0, Math.PI / 2, 0);
+  } else if (id === 'cowboy') {
+    const lea = cmat('leather', 0x7a4a24, { roughness: 0.8 });
+    add(new THREE.CylinderGeometry(0.21, 0.21, 0.012, 32), lea, 0, -0.035, 0).scale.set(1, 1, 0.82);
+    add(new THREE.CylinderGeometry(0.085, 0.1, 0.11, 20), lea, 0, 0.02, 0); add(new THREE.CylinderGeometry(0.101, 0.101, 0.02, 20), cmat('hatband', 0x2b1a10), 0, -0.022, 0);
+  } else if (id === 'tophat') {
+    const blk = cmat('silk', 0x141416, { roughness: 0.4 });
+    add(new THREE.CylinderGeometry(0.15, 0.15, 0.012, 28), blk, 0, -0.04, 0); add(new THREE.CylinderGeometry(0.09, 0.095, 0.2, 24), blk, 0, 0.06, 0); add(new THREE.CylinderGeometry(0.097, 0.097, 0.03, 24), cmat('redband', 0xb3122a), 0, -0.02, 0);
+  } else if (id === 'halo') {
+    add(new THREE.TorusGeometry(0.11, 0.012, 8, 36), cmat('halo', 0xffe27a, { emissive: 0xffd24a, emissiveIntensity: 1.6 }), 0, 0.12, 0, Math.PI / 2, 0, 0);
+  } else if (id === 'viking') {
+    const met = cmat('iron2', 0x8c8f94, { metalness: 0.9, roughness: 0.35 });
+    const d = add(new THREE.SphereGeometry(0.125, 20, 12, 0, Math.PI * 2, 0, Math.PI / 2), met, 0, -0.07, 0); d.scale.y = 1.05;
+    add(new THREE.CylinderGeometry(0.128, 0.128, 0.025, 20), cmat('bronze', 0xa8742e, { metalness: 1, roughness: 0.3 }), 0, -0.07, 0);
+    for (const s of [-1, 1]) add(new THREE.ConeGeometry(0.025, 0.16, 10), cmat('horn', 0xeee4cc, { roughness: 0.5 }), s * 0.13, 0.0, 0, 0, 0, s * -0.9);
+  } else if (id === 'beanie') {
+    add(new THREE.SphereGeometry(0.118, 18, 12, 0, Math.PI * 2, 0, Math.PI / 2), cmat('knit', 0xc0392b, { roughness: 1 }), 0, -0.07, 0);
+    add(new THREE.CylinderGeometry(0.12, 0.12, 0.04, 18), cmat('knit2', 0xe8e2d6, { roughness: 1 }), 0, -0.07, 0); add(new THREE.SphereGeometry(0.035, 10, 8), cmat('knit2', 0xe8e2d6), 0, 0.05, 0);
+  } else if (id === 'cap') {
+    const c = cmat('capc', 0x1f4fa0, { roughness: 0.8 });
+    add(new THREE.SphereGeometry(0.115, 18, 12, 0, Math.PI * 2, 0, Math.PI / 2), c, 0, -0.07, 0);
+    const v = add(new THREE.CylinderGeometry(0.09, 0.09, 0.01, 20, 1, false, 0, Math.PI), c, 0, -0.07, -0.08); v.rotation.y = Math.PI / 2;
+  }
+  return g;
+}
+function seatCostume(m, grp) {
+  // put the costume's origin on top of the helmet, axes matching the head (up, forward = -z)
+  try {
+    if (!m.headFrame) {
+      let hel = null; m.body.traverse(o => { if (o.isSkinnedMesh && o.userData.role === 'helmet' && !hel) hel = o; });
+      const B = m.bones; if (!hel) throw 0;
+      const idx = hel.skeleton.bones.indexOf(B.head), inv = hel.skeleton.boneInverses[idx];
+      hel.geometry.computeBoundingBox(); const bb = hel.geometry.boundingBox, top = new V3((bb.min.x + bb.max.x) / 2, bb.max.y, (bb.min.z + bb.max.z) / 2).applyMatrix4(hel.bindMatrix).applyMatrix4(inv);
+      const up = new V3(0, 1, 0).transformDirection(inv), back = new V3(0, 0, 1).transformDirection(inv), right = new V3().crossVectors(up, back).normalize(); back.crossVectors(right, up).normalize();
+      m.headFrame = { pos: top, q: new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(right, up, back)) };
+    }
+    grp.position.copy(m.headFrame.pos); grp.quaternion.copy(m.headFrame.q);
+  } catch (e) { grp.position.set(0, 0.22, 0); }
+}
+function applyLook(m, look) {
+  if (!m || !m.v2 || !look) return;
+  const key = look.sk + '/' + look.ct; if (m.lookKey === key) return; m.lookKey = key;
+  const mats = skinMats(look.sk), cos = COSTUMES.find(c => c.id === look.ct) || COSTUMES[0];
+  m.body.traverse(o => {
+    if (!o.isMesh || !o.userData.role) return;
+    const r = o.userData.role, mt = r === 'uniform' ? mats.uniform : r === 'vest' ? mats.vest : r === 'helmet' ? mats.helmet : null;
+    if (mt) o.material = o.isSkinnedMesh ? s2Skinned(mt) : mt;
+    if (r === 'helmet' || r === 'accent') o.visible = !cos.hide;
+  });
+  if (m.costume) { m.costume.parent && m.costume.parent.remove(m.costume); m.costume = null; }
+  if (cos.id !== 'none') { const g = costumeMesh(cos.id); seatCostume(m, g); m.bones.head.add(g); m.costume = g; }
+}
+function botLook(e) { const h = hashStr(String(e.id)); return { sk: SKINS[h % SKINS.length].id, ct: h % 3 === 0 ? COSTUMES[(h >>> 3) % COSTUMES.length].id : 'none' }; }
+function lookFor(e) {
+  if (e === selfView || (e.id && String(e.id) === 'lobby-' + me.id)) return myLook();
+  if (e.kind === 'bot') return botLook(e);
+  if (e.look) return e.look;
+  return { sk: 'std', ct: 'none' };
+}
+
+// ---- emotes: arm poses (model frame: x right, y up, z back) with a little whole-body motion
+let emoteSeq = 0;
+function startEmote(id) {
+  if (!inGame || !me.alive || dropping || buildMode || editing) return;
+  const em = EMOTES.find(x => x.id === (id || myLook().em)); if (!em) return;
+  selfView.emote = { id: em.id, t: 0 }; emoteSeq++; if (em.id === 'clap' || em.id === 'dance') sfx.draw();
+}
+function emotePose(m, e, dt, pr, pl) {
+  const em = EMOTES.find(x => x.id === e.emote.id); if (!em) { e.emote = null; return; }
+  e.emote.t += dt; const t = e.emote.t; if (t > em.dur) { e.emote = null; return; }
+  const W = m.W; for (const k of ['rifle', 'sg', 'knife']) if (W[k] && W[k].g) W[k].g.visible = false;
+  const s = Math.sin(t * Math.PI * 2 * (em.id === 'dance' ? 2 : 2.4)), B = m.bones;
+  let R = [0.24, 0.92, 0.02], L = [-0.24, 0.92, 0.02];
+  if (em.id === 'wave') R = [0.32 + s * 0.1, 1.78, -0.1];
+  else if (em.id === 'salute') R = [0.09, 1.66, -0.13];
+  else if (em.id === 'clap') { const c = 0.05 + Math.max(0, s) * 0.12; R = [c, 1.28, -0.32]; L = [-c, 1.28, -0.32]; }
+  else if (em.id === 'point') R = [0.18, 1.46, -0.62];
+  else if (em.id === 'flex') { R = [0.33, 1.62 + s * 0.02, -0.04]; L = [-0.33, 1.62 - s * 0.02, -0.04]; }
+  else if (em.id === 'dance') { R = [0.3, 1.2 + s * 0.42, -0.15]; L = [-0.3, 1.2 - s * 0.42, -0.15]; m.root.position.y += Math.abs(s) * 0.06; m.root.rotation.y += Math.sin(t * Math.PI * 2) * 0.35; }
+  else if (em.id === 'spin') { R = [0.62, 1.42, 0]; L = [-0.62, 1.42, 0]; m.root.rotation.y += t * 7; m.root.position.y += Math.abs(Math.sin(t * 3)) * 0.04; }
+  m.root.updateMatrixWorld(true);
+  const elbowOut = em.id === 'flex' ? poleWorld(m, 1, -0.3, 0) : pr, elbowOutL = em.id === 'flex' ? poleWorld(m, -1, -0.3, 0) : pl;
+  ik2(B.uparmR, B.foreR, B.handR, m.len.ua, m.len.fa, toWorld(m, R[0], R[1], R[2], new V3()), elbowOut);
+  ik2(B.uparmL, B.foreL, B.handL, m.len.ua, m.len.fa, toWorld(m, L[0], L[1], L[2], new V3()), elbowOutL);
+}
+
+// ---- shields: from chests, soak damage before health
+const SHIELDS = { shs: { name: 'Mini Shield', add: 25, cap: 50, rar: 1, col: 0x4aa8ff }, shb: { name: 'Big Shield Pot', add: 50, cap: 100, rar: 3, col: 0x4a7bff } };
+function rollShield(rnd) { return rnd() < 0.55 ? (rnd() < 0.78 ? 'shs' : 'shb') : null; }
+function shieldMesh(gid) {
+  const g = new THREE.Group(), big = gid === 'shb', s = SHIELDS[gid];
+  const glass = new THREE.MeshStandardMaterial({ color: 0xcfe8ff, transparent: true, opacity: 0.45, roughness: 0.05, metalness: 0.1 });
+  const liquid = new THREE.MeshStandardMaterial({ color: s.col, emissive: s.col, emissiveIntensity: 0.9, roughness: 0.2 });
+  const r = big ? 0.13 : 0.075, h = big ? 0.22 : 0.12;
+  const body = new THREE.Mesh(big ? new THREE.CylinderGeometry(r, r * 1.05, h, 20) : new THREE.SphereGeometry(r, 18, 14), glass); body.position.y = big ? h / 2 : r; g.add(body);
+  const liq = new THREE.Mesh(big ? new THREE.CylinderGeometry(r * 0.9, r * 0.95, h * 0.8, 20) : new THREE.SphereGeometry(r * 0.85, 16, 12), liquid); liq.position.y = big ? h * 0.42 : r * 0.92; g.add(liq);
+  const neck = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.32, r * 0.4, h * 0.35, 12), glass); neck.position.y = (big ? h : r * 2) + h * 0.12; g.add(neck);
+  const cork = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.3, r * 0.3, h * 0.12, 12), new THREE.MeshStandardMaterial({ color: 0x8a6a40, roughness: 0.9 })); cork.position.y = neck.position.y + h * 0.2; g.add(cork);
+  if (big) { const handle = new THREE.Mesh(new THREE.TorusGeometry(r * 0.55, 0.012, 6, 16, Math.PI), glass); handle.position.set(r * 0.9, h * 0.65, 0); handle.rotation.z = -Math.PI / 2; g.add(handle); }
+  return g;
+}
+function shieldPrompt(gid) { const s = SHIELDS[gid], have = me.shield || 0; return have >= s.cap ? 'Shield full (' + Math.round(have) + ')' : 'Drink ' + s.name + ' · +' + s.add + ' shield (up to ' + s.cap + ')'; }
+function useShield(gid) {
+  const s = SHIELDS[gid], have = me.shield || 0; if (have >= s.cap) { buildMsg('Shield is full'); return false; }
+  me.shield = Math.min(s.cap, have + s.add); sfx.pickup(); setTimeout(() => sfx.charge(), 120); buildMsg('+' + s.add + ' shield · ' + Math.round(me.shield)); return true;
+}
+function shieldHud() {
+  const v = Math.round(me.shield || 0), f = $('shFill'); if (!f) return;
+  if (hud.sh !== v) { hud.sh = v; f.style.width = v + '%'; $('shBar').hidden = v <= 0; $('shNum').textContent = v > 0 ? v + ' shield' : ''; }
+}
+
+// ---- Bunnpris and the Locker
+let bpTab = 'featured', bpSel = null, lkSlot = 'skin', previewLook = null;
+function itemsOf(kind) { return CAT[kind].map(it => ({ kind, it })); }
+function featured() { const day = Math.floor(Date.now() / 86400e3), R = mulberry(hashStr('bp' + day)); const all = [...itemsOf('skin'), ...itemsOf('costume'), ...itemsOf('emote')].filter(x => x.it.price > 0); const out = []; while (out.length < 6 && all.length) out.push(all.splice(Math.floor(R() * all.length), 1)[0]); return out; }
+function iconHtml(kind, it) { return kind === 'skin' ? '<img alt="" src="' + skinSwatch(it) + '">' : '<span class="bp-emo">' + it.icon + '</span>'; }
+function renderShop() {
+  renderBucks();
+  for (const b of document.querySelectorAll('#bpTabs button')) b.classList.toggle('on', b.dataset.t === bpTab);
+  const grid = $('bpGrid'); grid.textContent = '';
+  const list = bpTab === 'featured' ? featured() : itemsOf(bpTab);
+  for (const { kind, it } of list) {
+    const own = owns(kind, it.id), c = document.createElement('button'); c.type = 'button'; c.className = 'bp-card' + (bpSel && bpSel.it === it ? ' sel' : '');
+    c.style.setProperty('--rc', RARITY[it.rar].c);
+    c.innerHTML = '<div class="bp-ico">' + iconHtml(kind, it) + '</div><b>' + escHtml(it.name) + '</b><i>' + ({ skin: 'Skin', costume: 'Costume', emote: 'Emote' })[kind] + ' · ' + RARITY[it.rar].n + '</i><span class="bp-price">' + (own ? 'Owned' : BUCK + ' ' + it.price) + '</span>';
+    c.onclick = () => { bpSel = { kind, it }; previewLook = Object.assign(myLook(), kind === 'skin' ? { sk: it.id } : kind === 'costume' ? { ct: it.id } : {}); if (kind === 'emote') previewEmote(it.id); sfx.draw(); renderShop(); };
+    grid.appendChild(c);
+  }
+  const buy = $('bpBuy'), info = $('bpInfo');
+  if (!bpSel) { buy.disabled = true; buy.textContent = 'Pick something'; info.textContent = 'Kills give ' + BUCK + ' 10 and a win gives ' + BUCK + ' 100. Click an item to try it on your soldier.'; return; }
+  const own = owns(bpSel.kind, bpSel.it.id), afford = BUCKS.get() >= bpSel.it.price;
+  buy.disabled = own || !afford; buy.textContent = own ? 'Owned · equip it in the Locker' : afford ? 'Buy · ' + BUCK + ' ' + bpSel.it.price : 'Need ' + BUCK + ' ' + (bpSel.it.price - BUCKS.get()) + ' more';
+  info.textContent = bpSel.it.name + ' · ' + RARITY[bpSel.it.rar].n + ' ' + ({ skin: 'skin', costume: 'costume', emote: 'emote' })[bpSel.kind];
+}
+function buySel() {
+  if (!bpSel || owns(bpSel.kind, bpSel.it.id) || BUCKS.get() < bpSel.it.price) return;
+  BUCKS.add(-bpSel.it.price); const o = owned(); o.push(bpSel.kind + ':' + bpSel.it.id); store.set('owned', o);
+  setLook(({ skin: 'sk', costume: 'ct', emote: 'em' })[bpSel.kind], bpSel.it.id); sfx.chest(0); renderShop();
+}
+function renderLocker() {
+  renderBucks();
+  const look = myLook();
+  for (const b of document.querySelectorAll('#lkSlots button')) { const k = b.dataset.k; b.classList.toggle('on', k === lkSlot); const it = CAT[k].find(x => x.id === look[{ skin: 'sk', costume: 'ct', emote: 'em' }[k]]); b.querySelector('span').innerHTML = iconHtml(k, it) + '<em>' + escHtml(it.name) + '</em>'; }
+  const grid = $('lkGrid'); grid.textContent = '';
+  for (const it of CAT[lkSlot]) {
+    const own = owns(lkSlot, it.id), eq = look[{ skin: 'sk', costume: 'ct', emote: 'em' }[lkSlot]] === it.id;
+    const c = document.createElement('button'); c.type = 'button'; c.className = 'bp-card' + (eq ? ' sel' : '') + (own ? '' : ' locked'); c.style.setProperty('--rc', RARITY[it.rar].c);
+    c.innerHTML = '<div class="bp-ico">' + iconHtml(lkSlot, it) + '</div><b>' + escHtml(it.name) + '</b><i>' + RARITY[it.rar].n + '</i><span class="bp-price">' + (eq ? 'Equipped' : own ? 'Equip' : '🔒 ' + BUCK + ' ' + it.price + ' in Bunnpris') + '</span>';
+    c.onclick = () => { if (!own) return; setLook({ skin: 'sk', costume: 'ct', emote: 'em' }[lkSlot], it.id); if (lkSlot === 'emote') previewEmote(it.id); previewLook = null; sfx.draw(); renderLocker(); };
+    grid.appendChild(c);
+  }
+}
+function previewEmote(id) { for (const p of L3.people.values()) if (p.ent.id === 'lobby-' + me.id) p.ent.emote = { id, t: 0 }; }
+function openPage(which) {
+  closeModePagesQuiet();
+  const el = $(which === 'shop' ? 'bpShop' : 'bpLocker'); el.hidden = false; document.body.classList.add('bp-open');
+  for (const b of document.querySelectorAll('.lnav button')) b.classList.toggle('on', b.dataset.page === which);
+  if (which === 'shop') { bpSel = null; renderShop(); } else renderLocker();
+}
+function closeModePagesQuiet() { for (const id of ['bpShop', 'bpLocker']) { const e = $(id); if (e) e.hidden = true; } document.body.classList.remove('bp-open'); previewLook = null; for (const b of document.querySelectorAll('.lnav button')) b.classList.toggle('on', b.dataset.page === 'lobby'); }
+
 /* ================= Game state ================= */
 let MAG = 30; const EYE = 1.62, SLOTS = 10, NET_TAG = 'on1';
 const BOT_NAMES = ['Kestrel', 'Marsh', 'Ondra', 'Vesper', 'Halloran', 'Tamsin', 'Ruiz', 'Okafor', 'Brann', 'Lio', 'Sable', 'Petra', 'Cato', 'Imre'];
@@ -4587,6 +4868,7 @@ function damageEnt(e, dmg, attackerId, crit) {
 }
 function damageMe(dmg, attackerId) {
   if (!inGame || !me.alive || spawnProt > 0 || dropping || BR.phase === 'end' || sameTeam(getEnt(attackerId), me)) return;
+  { const sa = Math.min(me.shield || 0, dmg); me.shield = (me.shield || 0) - sa; dmg -= sa; }
   me.hp -= dmg; lastHurt = 0; hurtFlash = Math.min(1, hurtFlash + 0.5); shake = Math.max(shake, 0.25);
   sfx.hurt();
   const a = getEnt(attackerId); if (a && a !== me) damageIndicator(a.pos);
@@ -4605,7 +4887,7 @@ function onDeath(victim, killerId, crit) {
   addFeed(killerId, victim.id, crit);
   try { arsenalOnDeath(victim); } catch (err) {}
   if (killerId === me.id && victim !== me) {
-    me.k++; me.streak++; store.set('kills', (store.get('kills', 0) | 0) + 1);
+    me.k++; me.streak++; store.set('kills', (store.get('kills', 0) | 0) + 1); BUCKS.add(10);
     if (me.streak > bestStreak) { bestStreak = me.streak; store.set('streak', bestStreak); }
     sfx.kill(); hitmarkT = 0.25; $('hitmark').className = 'on crit kill';
     const km = $('killMsg'); km.textContent = 'Eliminated '; const b = document.createElement('b'); b.textContent = victim.name; km.append(b);
@@ -4704,7 +4986,8 @@ function endMatch(winnerId) {
   if (BR.mode === 5) BR.place = ffaPlace();
   const won = !!winnerId && (winnerId === me.id || (BR.winTeam && BR.winTeam === teamOf(me)) || sameTeam(getEnt(winnerId), me));
   const teams = teamSize() > 1;
-  $('brEyebrow').textContent = won ? '#1 · Victory' : (BR.place ? `You placed #${BR.place}` : 'Match over');
+  if (won) BUCKS.add(100);
+  $('brEyebrow').textContent = won ? '#1 · Victory · +100 onebucks' : (BR.place ? `You placed #${BR.place}` : 'Match over');
   if (BR.mode === 6) BR.place = 0;
   $('brTitle').textContent = BR.mode === 6 ? (won ? 'Your team wins' : BR.winTeam ? (BR.winTeam === 'R' ? 'Red' : 'Blue') + ' team wins' : 'Draw') + ' · ' + CTF.score.R + ' – ' + CTF.score.B : won ? (teams ? 'Your team wins' : BR.mode === 5 ? 'Most kills' : 'Last one standing') : winnerId ? (teams ? `${nameOf(winnerId)}’s team wins` : `${nameOf(winnerId)} wins`) : 'Nobody survived';
   setBuildMode(false); if (editing) stopEdit(false);
@@ -5265,7 +5548,8 @@ function applyRemote(rec, pr) {
     }
     e.tp.set(+pr.p[0] || 0, +pr.p[1] || 0, +pr.p[2] || 0);
     if (Array.isArray(pr.r)) { e.tyaw = +pr.r[0] || 0; e.tpitch = +pr.r[1] || 0; }
-    e.hp = +pr.hp || 0; e.alive = !!pr.al; e.k = pr.k | 0; e.d = pr.d | 0; e.tst = pr.st | 0; e.tw = pr.w | 0; e.gid = pr.gi ? String(pr.gi) : null; e.dropping = !!pr.dr; e.team = pr.tm ? String(pr.tm) : id; e.rl = !!pr.rl;
+    e.hp = +pr.hp || 0; e.alive = !!pr.al; e.k = pr.k | 0; e.d = pr.d | 0; e.tst = pr.st | 0; e.tw = pr.w | 0; e.gid = pr.gi ? String(pr.gi) : null; e.look = { sk: SKINS.some(x => x.id === pr.sk) ? pr.sk : 'std', ct: COSTUMES.some(x => x.id === pr.ct) ? pr.ct : 'none' };
+    if (Array.isArray(pr.em) && pr.em[1] !== e.emSeq) { e.emSeq = pr.em[1]; if (EMOTES.some(x => x.id === pr.em[0])) e.emote = { id: pr.em[0], t: 0 }; } e.dropping = !!pr.dr; e.team = pr.tm ? String(pr.tm) : id; e.rl = !!pr.rl;
     if ((pr.bb | 0) === BR.id && BR.id) { if (rec.bv !== pr.bv) { rec.bv = pr.bv; syncRemoteBuilds(id, pr.bl); } }
     else if (rec.bv !== undefined) { rec.bv = undefined; removeOwnerBuilds(id); }
     if (nm !== e.name) { e.name = nm; setSoldierName(e.model, nm); }
@@ -5326,6 +5610,7 @@ function publish(now) {
         Math.round(e.hp), e.alive ? 1 : 0, e.k, e.d, e.dc, e.kb, e.sq, e.se[0], e.se[1], e.se[2], e.dropping ? 1 : 0, e.team || null, e.ai && e.ai.reloadT > 0 ? 1 : 0, e.gid || null]) : null,
     });
   } else Object.assign(pr, { jt: null, p: null, r: null, hp: null, al: null, k: null, d: null, dc: null, kb: null, sq: null, se: null, h: null, b: null });
+  { const lk = myLook(); Object.assign(pr, { sk: lk.sk, ct: lk.ct, em: selfView.emote ? [selfView.emote.id, emoteSeq] : null }); }
   Object.assign(pr, { gm: inGame ? myMatchMode : null }, lobbyPresence(), lootPresence(), { ctf: inGame && iAmHost && BR.mode === 6 ? ctfState() : null });
   net.presence(pr).catch(() => {});
 }
@@ -6077,7 +6362,7 @@ const KEY_ACTIONS = [
   ['jump', 'Jump', 'Space'], ['sprint', 'Sprint', 'ShiftLeft'], ['crouch', 'Crouch · slide when sprinting', 'KeyC'],
   ['fire', 'Fire (key, besides the mouse)', 'KeyF'], ['aim', 'Aim on / off', 'KeyQ'], ['reload', 'Reload · turn a ramp', 'KeyR'],
   ['w1', 'Gun slot 1 · wall in build mode', 'Digit1'], ['w2', 'Gun slot 2 · floor in build mode', 'Digit2'], ['w3', 'Knife · ramp in build mode', 'Digit3'],
-  ['use', 'Open a chest · pick up a gun', 'KeyE'], ['shop', 'Pirate Shop (with the token)', 'KeyI'], ['w4', 'Roof in build mode', 'Digit4'],
+  ['use', 'Open a chest · pick up a gun', 'KeyE'], ['shop', 'Pirate Shop (with the token)', 'KeyI'], ['emote', 'Emote (pick one in the Locker)', 'KeyN'], ['w4', 'Roof in build mode', 'Digit4'],
   ['build', 'Build mode on / off', 'KeyB'], ['bw', 'Build a wall', 'KeyZ'], ['bf', 'Build a floor', 'KeyX'], ['br', 'Build a ramp', 'KeyV'], ['bc', 'Build a roof', 'KeyT'],
   ['edit', 'Edit a piece · confirm the edit', 'KeyG'], ['board', 'Scoreboard (hold)', 'Tab'], ['camera', 'Switch first / third person', 'KeyH'], ['pause', 'Pause', 'KeyP'], ['mute', 'Mute', 'KeyM'],
 ];
@@ -6224,7 +6509,7 @@ function updateFpsBox() {
 const _tpH = new V3(), _tpD = new V3(), _tpR = new V3(), _tpW = new V3(), _tpRay = new THREE.Raycaster();
 let tpDist = 3.2;
 // aiming down sights always goes to the first-person view: the gun comes up to your eye with its red dot (or bead)
-function thirdPerson() { return settings.camera !== 'first' && inGame && me.alive && state !== 'menu' && !adsActive(); }
+function thirdPerson() { return (settings.camera !== 'first' || !!selfView.emote) && inGame && me.alive && state !== 'menu' && !adsActive(); }
 function tpNear() { return thirdPerson() && !dropping ? camera.position.distanceTo(_tpH) + 0.35 : 0; }
 function tpCamera(dt) {
   const ads = vm.ads;
@@ -6323,7 +6608,15 @@ function l3Person(m) {
   return p;
 }
 const _l3v = new V3();
+let lobbyShift = false;
+function lobbyViewOffset() {
+  const on = document.body.classList.contains('bp-open') && innerWidth > 760;
+  if (on === lobbyShift && !on) return;
+  lobbyShift = on; const W = innerWidth, H = innerHeight;
+  if (on) { const pw = Math.min(640, W * 0.64); L3.cam.setViewOffset(W, H, (W - pw) / 2 - W * 0.06 > 0 ? pw / 2 - W * 0.02 : 0, 0, W, H); } else L3.cam.clearViewOffset();
+}
 function renderLobbyStage(dt) {
+  lobbyViewOffset();
   const n = partyMode(), c = L3_CAM[n] || L3_CAM[1];
   L3.t += dt;
   // ease the camera to the party size
@@ -6348,6 +6641,8 @@ function renderLobbyStage(dt) {
     if (p.name !== s.name) { setSoldierName(p.model, s.name); p.model.tag.visible = false; p.name = s.name; }
     p.ent.pos.set(s.x, 0.26, s.z);
     p.ent.yaw = Math.PI + Math.atan2(s.x - L3.cam.position.x, L3.cam.position.z - s.z) * 0.6 + Math.sin(L3.t * 0.4 + i) * 0.05;
+    if (!p.ent.look) { const pp = presOf(String(p.ent.id).slice(6)); if (pp) p.ent.look = { sk: pp.sk || 'std', ct: pp.ct || 'none' }; else p.ent.look = null; }
+    { const pp = presOf(String(p.ent.id).slice(6)); if (pp) p.ent.look = { sk: SKINS.some(x => x.id === pp.sk) ? pp.sk : 'std', ct: COSTUMES.some(x => x.id === pp.ct) ? pp.ct : 'none' }; }
     animateSoldier(p.ent, dt); p.model.tag.visible = false; p.model.root.visible = true;
   });
   for (const [id, p] of L3.people) if (!seen.has(id)) { L3.sc.remove(p.model.root); L3.people.delete(id); }
@@ -6796,6 +7091,16 @@ if (GPU.software) {
 }
 console.info('Onenight graphics:', GPU.name, GPU.software ? '(software!)' : '');
 
+/* ================= Bunnpris / Locker wiring ================= */
+for (const b of document.querySelectorAll('.lnav button[data-page]')) b.addEventListener('click', () => { sfx.init(); const pg = b.dataset.page; if (pg === 'lobby') closeModePagesQuiet(); else openPage(pg); });
+for (const b of document.querySelectorAll('.bp-x')) b.addEventListener('click', () => closeModePagesQuiet());
+for (const b of document.querySelectorAll('#bpTabs button')) b.addEventListener('click', () => { bpTab = b.dataset.t; bpSel = null; previewLook = null; renderShop(); });
+for (const b of document.querySelectorAll('#lkSlots button')) b.addEventListener('click', () => { lkSlot = b.dataset.k; renderLocker(); });
+$('bpBuy').addEventListener('click', buySel);
+{ const nav = document.querySelector('.lnav'); const chip = document.createElement('span'); chip.id = 'bucksChip'; nav.after(chip); renderBucks(); }
+$('setBtn').addEventListener('click', () => closeModePagesQuiet()); $('navHelp').addEventListener('click', () => closeModePagesQuiet()); $('playBtn').addEventListener('click', () => closeModePagesQuiet());
+const _origRenderBucks = renderBucks;
+
 /* ================= Inactivity kick ================= */
 const AFK_LIMIT = 20, AFK_WARN = 10;
 let lastInput = performance.now(), kickMsgTimer = 0;
@@ -6878,6 +7183,7 @@ window.addEventListener('keydown', e0 => {
     if (dg && buildMode) setBuildMode(true, ['w', 'f', 'r', 'c'][dg - 1]);
     else if (dg && dg < 4) { if (editing) stopEdit(false); equipSlot(dg - 1); }
     if (e.code === 'KeyH' && !e.repeat) setSetting('camera', settings.camera === 'first' ? 'third' : 'first');
+    if (e.code === 'KeyN' && !e.repeat && inGame) startEmote();
     if (e.code === 'KeyI' && !e.repeat && inGame) { if (shopOpen) closeShop(); else openShop(); }
     if (e.code === 'Escape' && shopOpen) closeShop();
     if (e.code === 'Tab') { boardOpen = true; renderBoard(); $('board').hidden = false; }
