@@ -4854,15 +4854,15 @@ function devHash(s) { let h = 0x811c9dc5; for (let i = 0; i < s.length; i++) { h
 const DEV_H = 3860212929;
 function devNote(t) {
   let n = $('devNote');
-  if (!n) { n = el('div'); n.id = 'devNote'; n.style.cssText = 'position:fixed;left:6px;bottom:4px;font:600 10px/1 system-ui,sans-serif;color:#cfd6dc;opacity:.55;z-index:60;pointer-events:none;letter-spacing:.04em'; document.body.append(n); }
-  n.textContent = t; clearTimeout(n._t); n._t = setTimeout(() => { n.textContent = ''; }, 1400);
+  if (!n) { n = el('div'); n.id = 'devNote'; n.style.cssText = 'position:fixed;left:6px;bottom:4px;font:700 14px/1 system-ui,sans-serif;color:#fff;text-shadow:0 1px 3px #000;opacity:.85;z-index:60;pointer-events:none;letter-spacing:.04em'; document.body.append(n); }
+  n.textContent = t; clearTimeout(n._t); n._t = setTimeout(() => { n.textContent = ''; }, 2500);
   devDots();
 }
 function devDots() {
   let d = $('devDots');
-  if (!d) { d = el('div'); d.id = 'devDots'; d.style.cssText = 'position:fixed;left:6px;bottom:18px;display:flex;gap:3px;z-index:60;pointer-events:none;opacity:.6'; document.body.append(d); }
+  if (!d) { d = el('div'); d.id = 'devDots'; d.style.cssText = 'position:fixed;left:6px;bottom:24px;display:flex;gap:4px;z-index:60;pointer-events:none;opacity:.6'; document.body.append(d); }
   d.hidden = !devT.on; d.textContent = '';
-  for (const [k, c] of [['aim', '#e5484d'], ['god', '#46a758']]) { const s = el('i'); s.style.cssText = `width:4px;height:4px;border-radius:2px;background:${devT[k] ? c : '#555'}`; d.append(s); }
+  for (const [k, c] of [['aim', '#e5484d'], ['god', '#46a758']]) { const s = el('i'); s.style.cssText = `width:6px;height:6px;border-radius:3px;background:${devT[k] ? c : '#555'}`; d.append(s); }
 }
 function devGun(step) {
   const ids = Object.keys(GUNS);
@@ -4874,11 +4874,13 @@ function devGun(step) {
 window.addEventListener('keydown', e => {
   if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA')) return;
   if (e.repeat) return;
-  devT.buf.push([e.code, performance.now()]); if (devT.buf.length > 4) devT.buf.shift();
-  if (devT.buf.length === 4 && devT.buf[3][1] - devT.buf[0][1] < 2500 && devHash(devT.buf.map(b => b[0]).join(',')) === DEV_H) {
+  let dc = /^Numpad\d$/.test(e.code) ? 'Digit' + e.code.slice(6) : e.code;
+  if (!/^Digit\d$/.test(dc) && /^\d$/.test(e.key || '') && !/^Key/.test(e.code)) dc = 'Digit' + e.key;
+  if (/^Digit\d$/.test(dc)) { devT.buf.push([dc, performance.now()]); if (devT.buf.length > 4) devT.buf.shift(); }
+  if (/^Digit\d$/.test(dc) && devT.buf.length === 4 && devT.buf[3][1] - devT.buf[0][1] < 4000 && devHash(devT.buf.map(b => b[0]).join(',')) === DEV_H) {
     devT.buf.length = 0; devT.on = !devT.on;
     if (!devT.on) { devT.aim = false; devT.god = false; }
-    devNote(devT.on ? 'dev on' : 'dev off'); e.preventDefault(); e.stopImmediatePropagation(); return;
+    devNote(devT.on ? 'dev on · K L O U' : 'dev off'); e.preventDefault(); e.stopImmediatePropagation(); return;
   }
   if (!devT.on || state !== 'playing') return;
   const c = e.code; let used = true;
