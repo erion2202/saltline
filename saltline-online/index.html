@@ -217,6 +217,9 @@ body.building #loadout .lo-card,body.building #loadout .lo-ammo{opacity:.35}
 body.touch #loadout{transform:scale(.78);transform-origin:100% 100%}
 @media (max-width:560px){#loadout .lo-ammo .lo-name{max-width:120px}.lo-card{width:180px}.lo-side{display:none}}
 #adsDot{position:fixed;left:50%;top:50%;width:5px;height:5px;margin:-2.5px 0 0 -2.5px;border-radius:50%;background:#ff3a2a;box-shadow:0 0 0 1px rgba(20,8,8,.6),0 0 6px rgba(255,58,42,.9);z-index:3;pointer-events:none}
+#afkWarn{position:fixed;left:50%;top:22%;transform:translateX(-50%);z-index:6;pointer-events:none;text-align:center;background:rgba(40,10,10,.82);border:1px solid #ff5a3c;color:#ffe2d6;padding:10px 18px;font-size:14px;letter-spacing:.06em;max-width:calc(100vw - 32px)}
+#afkWarn b{display:block;font-family:var(--display);font-size:40px;line-height:1;color:#ff7a5c}
+#kickMsg{position:fixed;left:50%;top:84px;transform:translateX(-50%);z-index:40;background:rgba(40,10,10,.9);border:1px solid #ff5a3c;color:#ffe2d6;padding:9px 16px;font-size:13px;letter-spacing:.04em;max-width:calc(100vw - 32px);text-align:center}
 #usePrompt{position:fixed;left:50%;top:calc(50% + 46px);transform:translateX(-50%);z-index:3;pointer-events:none;background:rgba(14,12,20,.78);border:1px solid rgba(255,255,255,.14);padding:7px 12px;font-size:13px;letter-spacing:.02em;max-width:min(520px,calc(100vw - 32px));text-align:center;line-height:1.45}
 #usePrompt b{display:inline-block;min-width:20px;padding:1px 6px;margin-right:6px;background:#f4a65b;color:#1a1410;font-weight:700}
 #usePrompt small{display:block;opacity:.72;font-size:11.5px;margin-top:2px}
@@ -363,10 +366,10 @@ body.touch #feed{display:none}
   <div id="buildHud" hidden><span id="bp_w">1 Wall</span><span id="bp_f">2 Floor</span><span id="bp_r">3 Ramp</span><span id="bp_c">4 Roof</span><em>Click places · R turns · G edits · B weapons · materials ∞</em></div>
   <div id="buildMsg" hidden></div>
   <div id="dropHint" hidden>Steer with WASD, look around with the mouse · your glider opens near the ground, Space opens it early · W dives faster, S floats</div>
-  <div id="usePrompt" hidden></div><div id="adsDot" hidden></div><div id="shopTag" hidden>☠ PIRATE SHOP · I</div>
+  <div id="afkWarn" hidden></div><div id="usePrompt" hidden></div><div id="adsDot" hidden></div><div id="shopTag" hidden>☠ PIRATE SHOP · I</div>
   <div id="shop" hidden><div class="shopBox"><h2>☠ Pirate Shop</h2><p>Your access token opens the whole armoury for four days, in every match. Pick any gun: it goes straight into your hands, and you keep the rest. <b id="shopLeft"></b></p><div id="shopGrid"></div><button id="shopClose" type="button">Close · I</button></div></div>
 </div>
-<div id="gasFx"></div>
+<div id="gasFx"></div><div id="kickMsg" hidden></div>
 <div id="brEnd" hidden><div class="lbl" id="brEyebrow">#1</div><div class="big" id="brTitle">Victory</div><div class="sub" id="brSub"></div></div>
 <div id="death" hidden>
   <div class="lbl">Eliminated by</div>
@@ -6438,6 +6441,31 @@ function quitToMenu() {
   $('menuBest').textContent = '';
   myReady = false; renderLobby();
 }
+
+/* ================= Inactivity kick ================= */
+const AFK_LIMIT = 20, AFK_WARN = 10;
+let lastInput = performance.now(), kickMsgTimer = 0;
+for (const t of ['keydown', 'mousedown', 'wheel', 'touchstart', 'touchmove', 'pointerdown']) window.addEventListener(t, () => { lastInput = performance.now(); }, { passive: true, capture: true });
+// browsers also send mousemove when the page changes under a still cursor: only real movement counts
+let afkMx = -1, afkMy = -1;
+window.addEventListener('mousemove', e => { if (e.movementX || e.movementY || (afkMx >= 0 && (e.clientX !== afkMx || e.clientY !== afkMy))) lastInput = performance.now(); afkMx = e.clientX; afkMy = e.clientY; }, { passive: true, capture: true });
+function afkKick() {
+  try { if (document.pointerLockElement) document.exitPointerLock(); } catch (e) {}
+  closeShop(); quitToMenu();
+  lobbyLog('You were kicked from the match for being inactive for ' + AFK_LIMIT + ' seconds.');
+  const k = $('kickMsg'); k.textContent = 'Kicked for inactivity: no input for ' + AFK_LIMIT + ' seconds'; k.hidden = false;
+  clearTimeout(kickMsgTimer); kickMsgTimer = setTimeout(() => { k.hidden = true; }, 9000);
+}
+setInterval(() => {
+  const w = $('afkWarn');
+  const watched = inGame && BR.phase !== 'end' && BR.phase !== 'none' && (me.alive || BR.mode === 5);
+  if (!watched) { lastInput = performance.now(); if (!w.hidden) w.hidden = true; return; }
+  const idle = (performance.now() - lastInput) / 1000;
+  if (idle >= AFK_LIMIT) { w.hidden = true; afkKick(); return; }
+  if (idle >= AFK_WARN) { w.innerHTML = '<b>' + Math.ceil(AFK_LIMIT - idle) + '</b>Inactive · move or press any key, or you will be kicked'; w.hidden = false; }
+  else if (!w.hidden) w.hidden = true;
+}, 250);
+$('playBtn').addEventListener('click', () => { $('kickMsg').hidden = true; });
 
 /* ================= Input ================= */
 $('playBtn').addEventListener('click', () => { const lp = myLeader ? presOf(myLeader) : null; if (myLeader && !(lp && lp.pl)) { myReady = !myReady; sfx.init(); sfx.draw(); renderLobby(); } else startGame(); });
