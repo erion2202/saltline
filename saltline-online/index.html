@@ -1768,11 +1768,12 @@ const waterMat = new THREE.ShaderMaterial({
   uniforms: { time: timeU, sunDir: { value: sunDirN } },
   vertexShader: 'attribute float depth; varying vec3 vW; varying float vDepth; void main(){ vec4 w = modelMatrix * vec4(position,1.0); vW = w.xyz; vDepth = depth; gl_Position = projectionMatrix * viewMatrix * w; }',
   fragmentShader: `uniform float time; uniform vec3 sunDir; varying vec3 vW; varying float vDepth; ${SKY_GLSL}
-    float wave(vec2 p){ return noise(p * 1.1 + time * vec2(0.32, 0.21)) + 0.5 * noise(p * 2.6 - time * vec2(0.27, 0.36)) + 0.22 * noise(p * 6.5 + time * 0.7); }
+    float wave(vec2 p){ return noise(p * 1.1 + time * vec2(0.32, 0.21)) + 0.5 * noise(p * 2.6 - time * vec2(0.27, 0.36)) + 0.1 * noise(p * 6.5 + time * 0.7); }
     void main(){
       if (vDepth < 0.0) discard;
       vec2 p = vW.xz; float e = 0.12, h0 = wave(p);
-      vec3 n = normalize(vec3(-(wave(p + vec2(e, 0.0)) - h0) / e * 0.16, 1.0, -(wave(p + vec2(0.0, e)) - h0) / e * 0.16));
+      float wk = 0.012 + 0.075 * (1.0 - smoothstep(12.0, 70.0, length(cameraPosition.xz - vW.xz)));
+      vec3 n = normalize(vec3(-(wave(p + vec2(e, 0.0)) - h0) / e * wk, 1.0, -(wave(p + vec2(0.0, e)) - h0) / e * wk));
       vec3 v = normalize(cameraPosition - vW);
       float fres = 0.03 + 0.72 * pow(1.0 - max(dot(n, v), 0.0), 5.0);
       vec3 r = reflect(-v, n); r.y = abs(r.y);
@@ -1780,7 +1781,7 @@ const waterMat = new THREE.ShaderMaterial({
       float deep = smoothstep(0.0, 2.2, vDepth);
       vec3 body = mix(vec3(0.16,0.22,0.14), vec3(0.015,0.07,0.075), deep);
       vec3 col = mix(body, skyc, fres);
-      col += vec3(1.0,0.9,0.72) * pow(max(dot(r, sunDir), 0.0), 420.0) * 9.0;
+      col += vec3(1.0,0.9,0.72) * (pow(max(dot(r, sunDir), 0.0), 1400.0) * 6.0 + pow(max(dot(r, sunDir), 0.0), 60.0) * 0.12);
       float foam = smoothstep(0.16, 0.02, vDepth) * (0.55 + 0.45 * noise(p * 5.0 + time * 0.5));
       col = mix(col, vec3(0.85,0.88,0.86), foam * 0.7);
       float alpha = max(mix(0.28, 0.93, deep), fres);
@@ -2497,7 +2498,7 @@ const grassBladeTex2 = texFrom(makeCanvas(512, 256, (g, w, h) => {
   }
 }));
 grassBladeTex2.wrapS = grassBladeTex2.wrapT = THREE.ClampToEdgeWrapping;
-const GS = 0.42, GR = isTouch ? 24 : 40, GMAP = new THREE.Vector4(-86 * MS, -86 * MS, 172 * MS, 344), GMN = 256;
+const GS = 0.42, GR = isTouch ? 24 : 40, GMAP = new THREE.Vector4(-86 * MS, -86 * MS, 172 * MS, 512), GMN = 384;
 // terrain height (16 bits in red/green) and grass mask (tint in rgb, density in alpha) around the valley
 const heightTex = (() => {
   const N = GMAP.w, d = new Uint8Array(N * N * 4), st = GMAP.z / (N - 1);
@@ -3673,6 +3674,8 @@ function buildSoldier2(colorIdx, name) {
   const skin = SM.skins[colorIdx % SM.skins.length];
   const root = new THREE.Group(); root.rotation.order = 'YXZ';
   const body = THREE.SkeletonUtils.clone(SOLDIER.tpl); root.add(body);
+  if (!SM.blobMat) SM.blobMat = new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(makeCanvas(64, 64, (g) => { const gr = g.createRadialGradient(32, 32, 2, 32, 32, 32); gr.addColorStop(0, 'rgba(0,0,0,.55)'); gr.addColorStop(0.6, 'rgba(0,0,0,.25)'); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.fillRect(0, 0, 64, 64); })), transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, toneMapped: false });
+  const blob = new THREE.Mesh(new THREE.PlaneGeometry(1.1, 1.1), SM.blobMat); blob.rotation.x = -Math.PI / 2; blob.position.y = 0.03; blob.renderOrder = 1; root.add(blob); root.userData.blob = blob;
   if (!SM.mask2) { SM.mask2 = SM.mask.clone(); SM.mask2.color.setHex(0x4a4b3c).convertSRGBToLinear(); SM.mask2._lin = true; }
   const MAP = { uniform: SM.uniform, vest: SM.vest, pouch: SM.pouch, boots: SM.boots, glove: SM.glove, helmet: SM.helmet, mask: SM.mask2, goggle: SM.goggle, strap: SM.strap, skin, accent };
   const bones = {};
@@ -3813,7 +3816,7 @@ function animateSoldier2(e, dt) {
   const aimWant = e.alive && hasGun && !sprinting && (firing || (e.ai && e.ai.visible) || e.aiming || (e.lastShotT || 9) < 1.5);
   m.aimK += ((aimWant ? 1 : 0) - m.aimK) * Math.min(1, dt * 8);
   // ---- place the whole figure
-  m.root.position.copy(e.pos); m.root.rotation.set(0, e.yaw, 0);
+  m.root.position.copy(e.pos); m.root.rotation.set(0, e.yaw, 0); if (m.root.userData.blob) m.root.userData.blob.visible = e.alive && !e.dropping;
   m.fall = e.alive ? 0 : Math.min(1, m.fall + dt * 1.6);
   const f = 1 - Math.pow(1 - m.fall, 3);
   if (freefall) m.root.rotation.x = 1.3 + Math.sin(time * 2.3 + m.color) * 0.04;
@@ -4813,7 +4816,8 @@ function applyLook(m, look) {
   if (m.costume) { m.costume.parent && m.costume.parent.remove(m.costume); m.costume = null; }
   if (cos.id !== 'none') { const g = costumeMesh(cos.id); seatCostume(m, g); m.bones.head.add(g); m.costume = g; }
 }
-function botLook(e) { const h = hashStr(String(e.id)); return { sk: SKINS[h % SKINS.length].id, ct: h % 3 === 0 ? COSTUMES[(h >>> 3) % COSTUMES.length].id : 'none' }; }
+const BOT_SKINS = ['std', 'std', 'pixel', 'desert', 'night'];
+function botLook(e) { const h = hashStr(String(e.id)); return { sk: BOT_SKINS[h % BOT_SKINS.length], ct: h % 6 === 0 ? ((h >>> 3) & 1 ? 'beanie' : 'cap') : 'none' }; }
 function lookFor(e) {
   if (e === selfView || (e.id && String(e.id) === 'lobby-' + me.id)) return myLook();
   if (e.kind === 'bot') return botLook(e);
