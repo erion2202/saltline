@@ -1,14 +1,8 @@
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Onenight</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800;900&family=IBM+Plex+Mono:wght@400;600&display=swap">
 <style>
-html,body{margin:0}
 /* Layout: full-bleed WebGL arena; HUD pinned to the four corners; menus are a left-anchored slab over the live match */
 :root{
   --ink:#16121d;
@@ -433,8 +427,6 @@ body.touch #feed{display:none}
 }
 @media (prefers-reduced-motion:reduce){ .bar i,#hitmark,#killMsg,.kf{transition:none} }
 </style>
-</head>
-<body>
 
 <canvas id="game" tabindex="-1"></canvas>
 <div id="scope" hidden><i></i><i></i><i></i><i></i><i></i><b></b></div>
@@ -3829,7 +3821,9 @@ function ik2(upper, lower, end, l1, l2, target, pole) {
 }
 const _mp = new V3(), _wp = new V3(), _pole = new V3(), _wq = new THREE.Quaternion(), _we = new THREE.Euler(0, 0, 0, 'YXZ');
 function toWorld(m, x, y, z, out = _wp) { return m.root.localToWorld(out.set(x, y, z)); }
-function poleWorld(m, x, y, z) { m.root.getWorldQuaternion(_qr); return _pole.set(x, y, z).applyQuaternion(_qr).normalize(); }
+const _poleR = new V3(), _poleL = new V3();
+// out: each arm needs its own vector, or both arms bend toward the last pole asked for
+function poleWorld(m, x, y, z, out = _pole) { m.root.getWorldQuaternion(_qr); return out.set(x, y, z).applyQuaternion(_qr).normalize(); }
 // ---- the animation itself
 function animateSoldier2(e, dt) {
   const m = e.model, B = m.bones;
@@ -3960,7 +3954,7 @@ function animateSoldier2(e, dt) {
   W.rifle.g.visible = tw === 1 && !inAir; W.sg.g.visible = tw === 3 && !inAir; W.knife.g.visible = tw === 2 && !inAir;
   const gun = tw === 3 ? W.sg : W.rifle;
   B.chest.getWorldPosition(_c); m.root.worldToLocal(_c);                // chest position in the model frame
-  const pr = poleWorld(m, 0.8, -0.6, 0.35), pl = poleWorld(m, -0.9, -0.55, 0.1);
+  const pr = poleWorld(m, 0.8, -0.6, 0.35, _poleR), pl = poleWorld(m, -0.9, -0.55, 0.1, _poleL);
   const handTarget = new V3(), handTarget2 = new V3();
   if (inAir) {
     if (freefall) { handTarget.set(0.62, 1.42, -0.2); handTarget2.set(-0.62, 1.42, -0.2); }
@@ -4920,7 +4914,7 @@ function emotePose(m, e, dt, pr, pl) {
   else if (em.id === 'dance') { R = [0.3, 1.2 + s * 0.42, -0.15]; L = [-0.3, 1.2 - s * 0.42, -0.15]; m.root.position.y += Math.abs(s) * 0.06; m.root.rotation.y += Math.sin(t * Math.PI * 2) * 0.35; }
   else if (em.id === 'spin') { R = [0.62, 1.42, 0]; L = [-0.62, 1.42, 0]; m.root.rotation.y += t * 7; m.root.position.y += Math.abs(Math.sin(t * 3)) * 0.04; }
   m.root.updateMatrixWorld(true);
-  const elbowOut = em.id === 'flex' ? poleWorld(m, 1, -0.3, 0) : pr, elbowOutL = em.id === 'flex' ? poleWorld(m, -1, -0.3, 0) : pl;
+  const elbowOut = em.id === 'flex' ? poleWorld(m, 1, -0.3, 0, new V3()) : pr, elbowOutL = em.id === 'flex' ? poleWorld(m, -1, -0.3, 0, new V3()) : pl;
   ik2(B.uparmR, B.foreR, B.handR, m.len.ua, m.len.fa, toWorld(m, R[0], R[1], R[2], new V3()), elbowOut);
   ik2(B.uparmL, B.foreL, B.handL, m.len.ua, m.len.fa, toWorld(m, L[0], L[1], L[2], new V3()), elbowOutL);
 }
@@ -6279,41 +6273,18 @@ function animateSoldier(e, dt) {
 /* ================= Networking (room capability) ================= */
 let room = null, net = null, myPeer = null, myJt = 0, hostId = null, iAmHost = true, lastPub = 0, roomChecked = false;
 const remotes = new Map();
-// Multiplayer through the game's own server. The server keeps each player's latest state
-// and sends everyone a snapshot 20 times a second; this mimics the presence API the game uses.
-function wsRoom(url) {
-  let ws = null, myId = null, list = [], cache = new Map(), last = null;
-  const connect = () => {
-    try { ws = new WebSocket(url); } catch (e) { setTimeout(connect, 3000); return; }
-    ws.onopen = () => { if (last) ws.send(last); };
-    ws.onmessage = ev => {
-      let m; try { m = JSON.parse(ev.data); } catch (e) { return; }
-      if (m.t === 'hello') { myId = String(m.id); return; }
-      if (m.t !== 'snap' || !Array.isArray(m.peers)) return;
-      const next = new Map();
-      list = m.peers.map(p => {
-        const key = p.id + '|' + JSON.stringify(p.pr);
-        const o = cache.get(key) || Object.freeze({ peer: String(p.id), sameTab: String(p.id) === myId, presence: p.pr || {} });
-        next.set(key, o); return o;
-      });
-      if (myId && !list.some(p => p.sameTab)) list.push(Object.freeze({ peer: myId, sameTab: true, presence: {} }));
-      cache = next;
-    };
-    ws.onclose = () => { list = []; setTimeout(connect, 2500); };
-    ws.onerror = () => {};
-  };
-  connect();
-  return {
-    peers: () => list,
-    presence: pr => { last = JSON.stringify({ t: 'p', pr }); if (ws && ws.readyState === 1) ws.send(last); return Promise.resolve(); },
-    onPeers: () => () => {},
-  };
-}
-(() => {
-  const url = window.SALTLINE_SERVER || (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host;
-  if (location.protocol !== 'file:' && /^wss?:\/\/[^/]/.test(url)) net = wsRoom(url);
+(async () => {
+  try {
+    if (window.claude && window.claude.use) {
+      room = await window.claude.use('room');
+      if (room) {
+        try { net = await room.join('onenight-arena'); } catch (e) { net = room; }
+        net.onPeers(() => {}, () => { net = null; updateNetUI(); });
+      }
+    }
+  } catch (e) { net = null; }
   roomChecked = true;
-  setTimeout(updateNetUI, 0);
+  updateNetUI();
 })();
 function activeRemotes() { let n = 0; for (const r of remotes.values()) if (r.last && r.last.pl && liveRec(r) && (!inGame || sameServer(r.last))) n++; return n; }
 let myMatchMode = 1;
@@ -6446,7 +6417,7 @@ function updateNetUI() {
   const others = activeRemotes();
   let menu;
   if (!net) menu = roomChecked
-    ? 'Can’t reach the game server, so you’re playing solo against AI.'
+    ? 'Solo against AI. Live multiplayer works when this page is open on claude.ai for signed-in people it has been shared with.'
     : 'Checking who else is here…';
   else if (others === 0) menu = 'Nobody else is in the arena right now. You’ll start against AI, and anyone who opens this page drops into your match.';
   else menu = `${others} ${others === 1 ? 'person is' : 'people are'} in the arena now. Press Play to join them.`;
@@ -8281,6 +8252,3 @@ updateNetUI();
 requestAnimationFrame(frame);
 })();
 </script>
-
-</body>
-</html>
