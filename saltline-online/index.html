@@ -6921,7 +6921,7 @@ function startEdit() {
   if (b.owner !== me.id && b.owner !== 'me') { buildMsg('You can only edit your own pieces'); return; }
   if (b.t === 'r') { buildMsg('Ramps can’t be edited'); return; }
   const sel = new Set(); const n = b.t === 'w' ? 9 : 4; for (let i = 0; i < n; i++) if (b.mask & (1 << i)) sel.add(i);
-  editing = { b, sel, quads: tileQuads(b), paint: null }; updateGhost(null);
+  editing = { b, sel, quads: tileQuads(b), paint: null, wait: true, picked: false }; updateGhost(null);
   sfx.draw();
 }
 function stopEdit(apply) {
@@ -6945,7 +6945,10 @@ function updateBuild(dt) {
     if (!builds.has(editing.b.id) || editing.b.mesh.position.distanceTo(player.pos) > 12) { stopEdit(false); return; }
     camera.updateMatrixWorld(); camera.getWorldDirection(_er); ray.set(camera.position, _er); ray.far = 9;
     const h = ray.intersectObjects(editing.quads, false)[0];
-    const fire = mouseDown || shotQueued || keys.has('KeyF') || keys.has('KeyJ') || touchFire.id !== null;
+    let fire = mouseDown || shotQueued || keys.has('KeyF') || keys.has('KeyJ') || touchFire.id !== null;
+    if (editing.wait) { if (fire && !shotQueued) fire = false; else editing.wait = false; }   // a button already held when the edit opened doesn't count
+    if (!fire && editing.picked && settings.editRelease) { shotQueued = false; stopEdit(true); return; }   // let go: confirm
+    if (fire) editing.picked = true;
     if (h && fire) {
       const t = h.object.userData.tile;
       if (editing.paint === null) editing.paint = !editing.sel.has(t);
@@ -7137,7 +7140,7 @@ const SET = [
   ['controls', 'invert', 'Invert up and down', 'check', { def: false }],
   ['controls', 'aimHold', 'Right mouse button', 'select', { def: 'hold', options: [['hold', 'Hold to aim'], ['toggle', 'Click to aim, click again to stop']] }],
   ['controls', 'crouchHold', 'Crouch key', 'select', { def: 'toggle', options: [['toggle', 'Press to crouch, press again to stand'], ['hold', 'Hold to crouch']] }],
-  ['controls', 'editRelease', 'Edit on release: hold the edit key, let go to confirm', 'check', { def: true }],
+  ['controls', 'editRelease', 'Confirm edit on release: let go of the mouse button to confirm', 'check', { def: true }],
   ['controls', 'mmbSwap', 'Middle mouse button swaps guns (a quick click; TrackPoint scrolling still works)', 'check', { def: true }],
   ['controls', 'autoSprint', 'Always sprint when moving forward', 'check', { def: false }],
   ['controls', 'wheel', 'Two-finger touchpad swipe aims', 'check', { def: true }],
@@ -7232,7 +7235,7 @@ function refreshKeyHelp() {
     ['Middle mouse button', 'Swap between your two guns (to the knife if you only have one)'],
     [`${k('use')} · ${k('shop')}`, 'Open a glowing chest or pick up a gun (full hands: swaps the one you hold) · Pirate Shop when you own the token'],
     [`${k('build')} · ${k('bw')} ${k('bf')} ${k('br')} ${k('bc')}`, 'Build mode · wall, floor, ramp, roof straight away. Click places'],
-    [k('edit'), settings.editRelease ? 'Hold to edit the piece you aim at, click or drag tiles, let go to confirm' : 'Edit the piece you aim at: click tiles, press again to confirm'],
+    [k('edit'), settings.editRelease ? 'Edit the piece you aim at: hold the mouse and drag over tiles, let go to confirm' : 'Edit the piece you aim at: click tiles, press again to confirm'],
     [`${k('reload')} · ${k('board')} · Esc`, 'Reload · scoreboard · pause'],
   ];
   box.textContent = ''; for (const [a, b] of rows) box.append(el('b', '', a), el('span', '', b));
@@ -8029,7 +8032,6 @@ window.addEventListener('keydown', e0 => {
 window.addEventListener('keyup', e0 => {
   const e = keyEv(e0);
   keys.delete(e.code);
-  if ((e.code === 'KeyG' || e.code === 'KeyE') && settings.editRelease && editing && state === 'playing') stopEdit(true);
   if (e.code === 'KeyC' && settings.crouchHold === 'hold' && crouchHeld && slideT <= 0) crouchHeld = false;
   if (e.code === 'Tab') { boardOpen = false; $('board').hidden = true; }
 });
